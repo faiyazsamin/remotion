@@ -5,3 +5,11 @@ dist
 
 # Ignore the output video from Git but not videos you import into src/.
 out
+
+build
+# Local archive, not part of the project.
+backup.zip
+
+# Captured reference UI, kept locally only.
+src/projects/featureshark/raw_html/
+src/projects/featureshark/1.htm
