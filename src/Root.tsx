@@ -8,7 +8,6 @@ import {
   FeatureSharkFeedbackReviewSceneComposition,
   FeatureSharkFeedbackWidgetSceneComposition,
   FeatureSharkHelpCenterSceneComposition,
-  FeatureSharkPublicBoardSceneComposition,
   FeatureSharkPublicBoardScenePart2Composition,
   FeatureSharkWidgetSupportSceneComposition,
 } from "./projects/featureshark";
@@ -21,7 +20,6 @@ export const RemotionRoot: React.FC = () => {
       <FeatureSharkAdminHomeSceneComposition />
       <FeatureSharkFeedbackWidgetSceneComposition />
       <FeatureSharkFeedbackBoardSceneComposition />
-      <FeatureSharkPublicBoardSceneComposition />
       <FeatureSharkPublicBoardScenePart2Composition />
       <FeatureSharkFeedbackReviewSceneComposition />
       <FeatureSharkBulkStatusSceneComposition />

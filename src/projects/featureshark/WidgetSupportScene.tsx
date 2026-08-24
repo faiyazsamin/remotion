@@ -34,6 +34,7 @@ import {
   WIDGET_EXPANDED_TOP,
   WIDGET_EXPANDED_WIDTH,
   WIDGET_HEIGHT,
+  WIDGET_RIGHT,
   WIDGET_TOP,
   WIDGET_WIDTH,
   widgetBackCentre,
@@ -77,6 +78,48 @@ const press = (frame: number, at: number, low: number) =>
     extrapolateRight: "clamp",
     easing: EASE_OUT,
   });
+
+const pulse = (frame: number, at: number) =>
+  interpolate(frame, [at, at + 10, at + 28], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const spotlightOpacity = (frame: number, start: number, end: number) =>
+  interpolate(frame, [start, start + 12, end - 12, end], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const Spotlight: React.FC<{
+  label: string;
+  opacity: number;
+  rect: { x: number; y: number; width: number; height: number };
+  radius?: number;
+  style?: React.CSSProperties;
+}> = ({ label, opacity, rect, radius = 16, style }) =>
+  opacity > 0.01 ? (
+    <div
+      aria-label={label}
+      style={{
+        position: "absolute",
+        left: rect.x,
+        top: rect.y,
+        width: rect.width,
+        height: rect.height,
+        borderRadius: radius,
+        pointerEvents: "none",
+        zIndex: 22,
+        boxShadow: `0 0 0 9999px rgba(18, 14, 45, ${0.36 * opacity}), 0 0 ${
+          28 * opacity
+        }px rgba(255, 255, 255, ${0.18 * opacity})`,
+        outline: `2px solid rgba(255, 255, 255, ${0.24 * opacity})`,
+        ...style,
+      }}
+    />
+  ) : null;
 
 /** Beat 1 — the greeting is already out; the visitor opens the panel. */
 const TOGGLE_REACH_START = 30;
@@ -320,6 +363,12 @@ export const WidgetSupportScene: React.FC = () => {
     [WIDGET_HEIGHT, WIDGET_EXPANDED_HEIGHT],
   );
   const top = interpolate(expand, [0, 1], [WIDGET_TOP, WIDGET_EXPANDED_TOP]);
+  const widgetRect = {
+    x: SITE_WIDTH - WIDGET_RIGHT - width,
+    y: top,
+    width,
+    height,
+  };
 
   /* Each view fades in on its own under the header, which never re-mounts. */
   const viewIn = arrive(
@@ -368,10 +417,37 @@ export const WidgetSupportScene: React.FC = () => {
             : view === "home"
               ? { title: "Home" }
               : { title: "Messages" };
+  const widgetFocus = spotlightOpacity(
+    frame,
+    OPEN,
+    CLOSED + OPEN_LENGTH - 4,
+  );
+  const hostDepth = widgetFocus;
+  const togglePop = pulse(frame, TOGGLE_CLICK);
+  const homePop = pulse(frame, HOME_CLICK);
+  const helpPop = pulse(frame, HELP_CLICK);
+  const topicPop = pulse(frame, TOPIC_CLICK);
+  const articlePop = pulse(frame, ARTICLE_CLICK);
+  const updatesPop = pulse(frame, UPDATES_CLICK);
+  const releasePop = pulse(frame, RELEASE_CLICK);
 
   return (
     <AbsoluteFill name="Widget support scene" style={{ backgroundColor: "#ffffff" }}>
-      <AcmeSite />
+      <AcmeSite
+        style={{
+          scale: 1 - hostDepth * 0.006,
+          filter: `blur(${hostDepth * 1.4}px)`,
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: `rgba(10, 8, 24, ${hostDepth * 0.14})`,
+          pointerEvents: "none",
+        }}
+      />
 
       {/* The greeting that was already waiting, gone once the panel is open. */}
       {frame < OPEN + OPEN_LENGTH ? (
@@ -420,7 +496,10 @@ export const WidgetSupportScene: React.FC = () => {
                       backgroundColor: `rgba(244, 244, 248, ${
                         arrive(frame, HELP_REACH_END - 12, HELP_CLICK)
                       })`,
-                      scale: press(frame, HELP_CLICK, 0.98),
+                      scale: press(frame, HELP_CLICK, 0.98) * (1 + helpPop * 0.035),
+                      boxShadow: `0 ${6 * helpPop}px ${18 * helpPop}px rgba(92, 69, 223, ${
+                        0.16 * helpPop
+                      })`,
                     }
                   : {}
               }
@@ -431,7 +510,12 @@ export const WidgetSupportScene: React.FC = () => {
             <WidgetHelpView
               style={{ opacity: viewIn }}
               topics={[{ title: HELP_TOPIC, count: 1 }]}
-              topicStyle={() => ({ scale: press(frame, TOPIC_CLICK, 0.99) })}
+              topicStyle={() => ({
+                backgroundColor: `rgba(247, 247, 251, ${
+                  arrive(frame, TOPIC_REACH_END - 10, TOPIC_CLICK) * 0.9
+                })`,
+                scale: press(frame, TOPIC_CLICK, 0.99) * (1 + topicPop * 0.025),
+              })}
             />
           ) : null}
 
@@ -441,7 +525,10 @@ export const WidgetSupportScene: React.FC = () => {
               topic={HELP_TOPIC}
               articles={TOPIC_ARTICLES}
               articleStyle={() => ({
-                scale: press(frame, ARTICLE_CLICK, 0.98),
+                scale: press(frame, ARTICLE_CLICK, 0.98) * (1 + articlePop * 0.035),
+                boxShadow: `0 ${6 + articlePop * 8}px ${18 + articlePop * 18}px rgba(24, 28, 45, ${
+                  0.08 + articlePop * 0.08
+                })`,
               })}
             />
           ) : null}
@@ -451,7 +538,12 @@ export const WidgetSupportScene: React.FC = () => {
               style={{ opacity: viewIn }}
               releases={RELEASES}
               imageBackground={MEDIA_PLACEHOLDERS[0]}
-              cardStyle={() => ({ scale: press(frame, RELEASE_CLICK, 0.98) })}
+              cardStyle={() => ({
+                scale: press(frame, RELEASE_CLICK, 0.98) * (1 + releasePop * 0.035),
+                boxShadow: `0 ${6 + releasePop * 8}px ${18 + releasePop * 18}px rgba(24, 28, 45, ${
+                  0.08 + releasePop * 0.08
+                })`,
+              })}
             />
           ) : null}
 
@@ -494,9 +586,21 @@ export const WidgetSupportScene: React.FC = () => {
                 activeIndex={tab}
                 tabStyle={(index) =>
                   index === TAB_HOME
-                    ? { scale: press(frame, HOME_CLICK, 0.96) }
+                    ? {
+                        scale: press(frame, HOME_CLICK, 0.96) * (1 + homePop * 0.04),
+                        boxShadow: `0 ${5 * homePop}px ${14 * homePop}px rgba(92, 69, 223, ${
+                          0.16 * homePop
+                        })`,
+                      }
                     : index === TAB_UPDATES
-                      ? { scale: press(frame, UPDATES_CLICK, 0.96) }
+                      ? {
+                          scale:
+                            press(frame, UPDATES_CLICK, 0.96) *
+                            (1 + updatesPop * 0.04),
+                          boxShadow: `0 ${5 * updatesPop}px ${14 * updatesPop}px rgba(92, 69, 223, ${
+                            0.16 * updatesPop
+                          })`,
+                        }
                       : {}
                 }
               />
@@ -509,7 +613,19 @@ export const WidgetSupportScene: React.FC = () => {
         chevronStyle={{
           rotate: frame >= OPEN && frame < CLOSED ? "0deg" : "180deg",
         }}
-        style={{ scale: press(frame, TOGGLE_CLICK, 0.92) }}
+        style={{
+          scale: press(frame, TOGGLE_CLICK, 0.92) * (1 + togglePop * 0.08),
+          boxShadow: `0 ${8 + togglePop * 8}px ${24 + togglePop * 18}px rgba(70, 50, 190, ${
+            0.34 + togglePop * 0.16
+          })`,
+        }}
+      />
+
+      <Spotlight
+        label="Focus support widget"
+        opacity={widgetFocus}
+        rect={widgetRect}
+        radius={18}
       />
 
       <Cursor
@@ -525,6 +641,7 @@ export const WidgetSupportScene: React.FC = () => {
         })}
         hand={frame >= HOME_REACH_START}
         style={{
+          zIndex: 30,
           scale:
             press(frame, TOGGLE_CLICK, 0.88) *
             press(frame, HOME_CLICK, 0.88) *

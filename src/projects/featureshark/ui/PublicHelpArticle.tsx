@@ -19,6 +19,7 @@ import {
 import {
   BRAND_PURPLE,
   FONT_STACK,
+  SITE_HEIGHT,
   SITE_WIDTH,
   type PartProps,
 } from "./tokens";
@@ -42,6 +43,8 @@ const VOTE_HEIGHT = 44;
 const FOOTER_GAP = 56;
 const FOOTER_HEIGHT = 76;
 const VOTE_WIDTH = 96;
+const HELPFUL_CARD_HEIGHT =
+  HELPFUL_PADDING * 2 + HELPFUL_LABEL_HEIGHT + HELPFUL_GAP + VOTE_HEIGHT;
 
 /**
  * How far above the page's bottom edge the Yes button's centre sits. With the
@@ -53,6 +56,15 @@ export const HELPFUL_YES_FROM_BOTTOM =
 /** And how far in from the left, which is the content column's own edge. */
 export const HELPFUL_YES_FROM_LEFT =
   CONTENT_LEFT + HELPFUL_PADDING + VOTE_WIDTH / 2;
+
+export const HELPFUL_CARD_RECT = {
+  x: CONTENT_LEFT,
+  y:
+    SITE_HEIGHT -
+    (FOOTER_HEIGHT + FOOTER_GAP + HELPFUL_CARD_HEIGHT),
+  width: CONTENT_WIDTH,
+  height: HELPFUL_CARD_HEIGHT,
+};
 
 const Meta: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({
   icon,

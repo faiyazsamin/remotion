@@ -95,6 +95,7 @@ export type FeedbackRow = {
   /** Ticked by a bulk selection. */
   checked?: boolean;
   style?: React.CSSProperties;
+  statusStyle?: React.CSSProperties;
 };
 
 export type FeedbackTableProps = PartProps & {
@@ -261,6 +262,7 @@ export const FeedbackTable: React.FC<FeedbackTableProps> = ({
               fontSize: 14,
               fontWeight: 600,
               whiteSpace: "nowrap",
+              ...row.statusStyle,
             }}
           >
             {(() => {

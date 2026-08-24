@@ -11,6 +11,8 @@ import {
   CHANGELOG_TABLE_TOP,
   ChangelogBoard,
   ChangelogDetail,
+  CONFIG_LEFT,
+  CONFIG_WIDTH,
   configCloseCentre,
   configDateCentre,
   configDayCentre,
@@ -46,6 +48,7 @@ import {
   type FeedbackRow,
   type Release,
 } from "./ui";
+import { TABLE_HEADER_HEIGHT, TABLE_ROW_HEIGHT } from "./ui/FeedbackTable";
 
 export const FeatureSharkChangelogSceneComposition = () => (
   <Composition
@@ -73,6 +76,46 @@ const press = (frame: number, at: number, low: number) =>
     extrapolateRight: "clamp",
     easing: EASE_OUT,
   });
+
+const pulse = (frame: number, at: number) =>
+  interpolate(frame, [at, at + 10, at + 28], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const spotlightOpacity = (frame: number, start: number, end: number) =>
+  interpolate(frame, [start, start + 12, end - 12, end], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const Spotlight: React.FC<{
+  label: string;
+  opacity: number;
+  rect: { x: number; y: number; width: number; height: number };
+  radius?: number;
+}> = ({ label, opacity, rect, radius = 18 }) =>
+  opacity > 0.01 ? (
+    <div
+      aria-label={label}
+      style={{
+        position: "absolute",
+        left: rect.x,
+        top: rect.y,
+        width: rect.width,
+        height: rect.height,
+        borderRadius: radius,
+        pointerEvents: "none",
+        zIndex: 22,
+        boxShadow: `0 0 0 9999px rgba(18, 14, 45, ${0.4 * opacity}), 0 0 ${
+          30 * opacity
+        }px rgba(255, 255, 255, ${0.16 * opacity})`,
+        outline: `2px solid rgba(255, 255, 255, ${0.22 * opacity})`,
+      }}
+    />
+  ) : null;
 
 /** Beat 1 — the rail takes us from the feedback board to the changelog. */
 const RAIL_REACH_START = 44;
@@ -200,7 +243,20 @@ const ROW_TITLE = (() => {
 
   return { x: centre.x, y: CHANGELOG_TABLE_TOP + centre.y };
 })();
+const GUTTER = 12;
+const RELEASE_ROW_RECT = {
+  x: CHANGELOG_MAIN_LEFT + 18,
+  y: CHANGELOG_TABLE_TOP + TABLE_HEADER_HEIGHT + 5,
+  width: SITE_WIDTH - CHANGELOG_MAIN_LEFT - GUTTER - 36,
+  height: TABLE_ROW_HEIGHT - 10,
+};
 const CONFIG_BUTTON = configurationCentre(SITE_WIDTH);
+const CONFIG_BUTTON_RECT = {
+  x: CONFIG_BUTTON.x - 82,
+  y: CONFIG_BUTTON.y - 26,
+  width: 164,
+  height: 52,
+};
 
 /*
   Every target below is measured by the modal itself, so it stays right as the
@@ -222,7 +278,20 @@ const CAL_DAY = configDayCentre(CAL_PICKED_DAY, {
 const CLOSE_BUTTON = configCloseCentre();
 const SAVE_BUTTON = saveCentre(SITE_WIDTH, SITE_HEIGHT);
 const VISIT_BUTTON = visitSiteCentre(SITE_WIDTH);
-
+const FIELD_RECT_WIDTH = CONFIG_WIDTH - 52;
+const EMPTY_IMAGE_RECT = {
+  x: CONFIG_LEFT + 26,
+  y: EMPTY_IMAGE.top,
+  width: FIELD_RECT_WIDTH,
+  height: EMPTY_IMAGE.height,
+};
+const MEDIA_TILE_SIZE = 347;
+const MEDIA_TILE_RECT = {
+  x: MEDIA_TILE.x - MEDIA_TILE_SIZE / 2,
+  y: MEDIA_TILE.y - MEDIA_TILE_SIZE / 2,
+  width: MEDIA_TILE_SIZE,
+  height: MEDIA_TILE_SIZE,
+};
 const CURSOR_FROM = { x: -140, y: SITE_HEIGHT + 130 };
 /** Clear of the editor once the release is open. */
 const DETAIL_REST = { x: 570, y: 190 };
@@ -360,6 +429,12 @@ export const ChangelogScene: React.FC = () => {
 
   const saved = arrive(frame, SAVED, SAVED + SAVED_LENGTH);
   const public_ = arrive(frame, PUBLIC, PUBLIC + PUBLIC_LENGTH);
+  const draftFocus = spotlightOpacity(frame, ROW_REACH_START + 4, ROW_CLICK + 18);
+  const configFocus = spotlightOpacity(frame, CONFIG_REACH_START + 4, CONFIG_CLICK + 14);
+  const imageSlotFocus = spotlightOpacity(frame, IMAGE_REACH_START + 4, IMAGE_CLICK + 14);
+  const galleryTileFocus = spotlightOpacity(frame, TILE_REACH_START + 4, TILE_CLICK + 16);
+  const releasePulse = pulse(frame, ROW_CLICK);
+  const publishedPulse = pulse(frame, SAVED + 12);
 
   const hasImage = frame >= PICKED;
   const status = frame >= PUBLISHED ? "Published" : RELEASE_STATUS;
@@ -373,6 +448,15 @@ export const ChangelogScene: React.FC = () => {
       style: {
         opacity:
           frame >= SAVED ? saved : arrive(frame, LIST - 16, LIST + 14),
+        scale:
+          1 +
+          (frame >= SAVED ? publishedPulse * 0.018 : releasePulse * 0.012),
+        boxShadow:
+          releasePulse > 0 || publishedPulse > 0
+            ? `0 0 ${28 * Math.max(releasePulse, publishedPulse)}px rgba(232, 117, 47, ${
+                0.14 * Math.max(releasePulse, publishedPulse)
+              })`
+            : undefined,
       },
     }),
   );
@@ -442,10 +526,12 @@ export const ChangelogScene: React.FC = () => {
             entryStyle={(index) => {
               const at = DETAIL + 20 + index * 12;
               const shown = arrive(frame, at, at + 22);
+              const entryPop = pulse(frame, at + 8);
 
               return {
                 opacity: shown,
                 translate: `0px ${(1 - shown) * 12}px`,
+                scale: 1 + entryPop * 0.018,
               };
             }}
           />
@@ -460,7 +546,10 @@ export const ChangelogScene: React.FC = () => {
           /* The picked tile lands in the slot rather than appearing in it. */
           imageStyle={{
             opacity: galleryOut,
-            scale: interpolate(galleryOut, [0, 1], [1.06, 1]),
+            scale: interpolate(galleryOut, [0, 1], [1.06, 1]) * (1 + pulse(frame, PICKED + 6) * 0.04),
+            boxShadow: `0 ${8 * galleryOut}px ${24 * galleryOut}px rgba(232, 117, 47, ${
+              0.2 * galleryOut
+            })`,
           }}
           statusOptions={RELEASE_STATUSES}
           statusOpen={frame >= STATUS_MENU && frame < PUBLISHED}
@@ -536,7 +625,14 @@ export const ChangelogScene: React.FC = () => {
           /* The picked tile brightens as it is taken; the other steps back. */
           tileStyle={(index) =>
             index === 0
-              ? { scale: press(frame, TILE_CLICK, 0.97) }
+              ? {
+                  scale:
+                    press(frame, TILE_CLICK, 0.97) *
+                    (1 + pulse(frame, TILE_REACH_END - 10) * 0.04),
+                  boxShadow: `0 ${10 * galleryTileFocus}px ${34 * galleryTileFocus}px rgba(232, 117, 47, ${
+                    0.25 * galleryTileFocus
+                  })`,
+                }
               : { opacity: 1 - galleryOut * 0.6 }
           }
         />
@@ -594,10 +690,38 @@ export const ChangelogScene: React.FC = () => {
             scroll={
               arrive(frame, SCROLL_START, SCROLL_END) * SCROLL_DISTANCE
             }
+            navStyle={{ opacity: arrive(frame, PUBLIC, PUBLIC + 24) }}
+            bodyStyle={{
+              opacity: arrive(frame, PUBLIC + 8, PUBLIC + 34),
+            }}
           />
         </AbsoluteFill>
       ) : null}
 
+      <Spotlight
+        label="Focus draft changelog row"
+        opacity={draftFocus}
+        rect={RELEASE_ROW_RECT}
+        radius={16}
+      />
+      <Spotlight
+        label="Focus configuration button"
+        opacity={configFocus}
+        rect={CONFIG_BUTTON_RECT}
+        radius={14}
+      />
+      <Spotlight
+        label="Focus featured image slot"
+        opacity={imageSlotFocus}
+        rect={EMPTY_IMAGE_RECT}
+        radius={14}
+      />
+      <Spotlight
+        label="Focus media gallery tile"
+        opacity={galleryTileFocus}
+        rect={MEDIA_TILE_RECT}
+        radius={14}
+      />
       <Cursor
         x={interpolate(frame, CURSOR_TIMES, CURSOR_X, {
           extrapolateLeft: "clamp",
@@ -611,6 +735,7 @@ export const ChangelogScene: React.FC = () => {
         })}
         hand
         style={{
+          zIndex: 30,
           scale:
             press(frame, RAIL_CLICK, 0.88) *
             press(frame, ROW_CLICK, 0.88) *

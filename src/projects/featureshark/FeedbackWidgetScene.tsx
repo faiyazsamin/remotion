@@ -7,6 +7,7 @@ import {
 } from "remotion";
 import {
   AcmeSite,
+  BRAND_PURPLE,
   Cursor,
   fabCentre,
   FeedbackWidget,
@@ -88,6 +89,13 @@ const SUBMIT_CLICK = 386;
 /** The request is in flight for one second before it lands. */
 const SENDING_LENGTH = FPS;
 const SENT = SUBMIT_CLICK + SENDING_LENGTH;
+const SUCCESS_PARTICLES = [
+  { x: -32, y: -18, size: 7, color: BRAND_PURPLE },
+  { x: 20, y: -24, size: 5, color: "#34d399" },
+  { x: 58, y: -6, size: 6, color: "#8b7cf6" },
+  { x: -54, y: 12, size: 5, color: "#5ed4ca" },
+  { x: 34, y: 20, size: 4, color: "#22c55e" },
+];
 
 const TOGGLE = toggleCentre(SITE_WIDTH, SITE_HEIGHT);
 const FAB = fabCentre(SITE_WIDTH);
@@ -134,7 +142,13 @@ export const FeedbackWidgetScene: React.FC = () => {
   const frame = useCurrentFrame();
 
   const open = arrive(frame, OPEN, OPEN + 26);
+  const hostDepth = arrive(frame, OPEN, OPEN + 40);
   const push = arrive(frame, PUSH, PUSH + PUSH_LENGTH);
+  const boardPulse = arrive(frame, BOARD_CLICK, BOARD_CLICK + 18);
+  const togglePulse =
+    frame >= OPEN_CLICK && frame < OPEN_CLICK + 28
+      ? 1 - arrive(frame, OPEN_CLICK, OPEN_CLICK + 28)
+      : 0;
 
   // Typed one character at a time rather than by ramping opacity, so the
   // counter underneath can be derived from the text actually on screen.
@@ -150,8 +164,13 @@ export const FeedbackWidgetScene: React.FC = () => {
 
   const sent = frame >= SENT;
   const boardPicked = frame >= BOARD_CLICK;
+  const titleFocus = !sent && !boardPicked
+    ? arrive(frame, TYPE_START - 18, TYPE_START + 18)
+    : 0;
   const sending = frame >= SUBMIT_CLICK && !sent;
   const confirm = arrive(frame, SENT, SENT + 20);
+  const successPop = arrive(frame, SENT + 6, SENT + 34);
+  const successFade = 1 - arrive(frame, SENT + 52, SENT + 86);
 
   // Past the first click the pointer is over controls, so it takes the hand.
   const hand = frame >= FAB_CLICK;
@@ -163,27 +182,102 @@ export const FeedbackWidgetScene: React.FC = () => {
     press(frame, FAB_CLICK, 0.88) *
     press(frame, BOARD_CLICK, 0.9) *
     press(frame, SUBMIT_CLICK, 0.88);
+  const cameraFocus = arrive(frame, TYPE_START - 34, TYPE_START + 20);
+  const cameraScale = interpolate(
+    frame,
+    [
+      TYPE_START - 34,
+      TYPE_START + 20,
+      BOARD_REACH_START - 10,
+      SUBMIT_REACH_END,
+      SENT + 42,
+    ],
+    [1, 1.2, 1.2, 1.16, 1.1],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: EASE_OUT,
+    },
+  );
+  const cameraTargetX = interpolate(
+    frame,
+    [TYPE_START - 34, TYPE_START + 20, BOARD_REACH_START - 10, SUBMIT_REACH_END],
+    [FORM.title.x, FORM.title.x, FORM.board.x, FORM.submit.x],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: EASE_OUT,
+    },
+  );
+  const cameraTargetY = interpolate(
+    frame,
+    [TYPE_START - 34, TYPE_START + 20, BOARD_REACH_START - 10, SUBMIT_REACH_END],
+    [FORM.title.y, FORM.title.y, FORM.board.y + 24, FORM.submit.y - 22],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: EASE_OUT,
+    },
+  );
+  const cameraX =
+    cameraFocus * (SITE_WIDTH / 2 - cameraTargetX * cameraScale);
+  const cameraY =
+    cameraFocus * (SITE_HEIGHT / 2 - cameraTargetY * cameraScale);
 
   return (
     <AbsoluteFill name="Feedback widget scene" style={{ backgroundColor: "#ffffff" }}>
-      <AcmeSite />
+      <AbsoluteFill
+        name="Site camera"
+        style={{
+          transformOrigin: "0 0",
+          transform: `translate(${cameraX}px, ${cameraY}px) scale(${cameraScale})`,
+        }}
+      >
+      <AcmeSite
+        style={{
+          opacity: 1,
+          scale: 1 - hostDepth * 0.006,
+          filter: `blur(${hostDepth * 1.4}px)`,
+        }}
+      />
+      </AbsoluteFill>
 
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: `rgba(10, 8, 24, ${hostDepth * 0.16})`,
+          pointerEvents: "none",
+        }}
+      />
+
+      <AbsoluteFill
+        name="Widget camera"
+        style={{
+          transformOrigin: "0 0",
+          transform: `translate(${cameraX}px, ${cameraY}px) scale(${cameraScale})`,
+        }}
+      >
       <FeedbackWidget
         style={{
           opacity: arrive(frame, OPEN, OPEN + 14),
-          scale: interpolate(frame, [OPEN, OPEN + 26], [0.82, 1], {
+          scale: interpolate(frame, [OPEN, OPEN + 18, OPEN + 34], [0.72, 1.045, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
             easing: EASE_OUT,
           }),
           // Rises the last stretch into place, matching the toggle's direction.
-          translate: `0px ${(1 - open) * 26}px`,
+          translate: `0px ${(1 - open) * 30}px`,
+          boxShadow: `0 ${18 + open * 12}px ${60 + open * 28}px rgba(24, 20, 60, ${
+            0.18 + open * 0.08
+          })`,
         }}
       >
         <FeedbackWidgetListView
           style={{
             // Pushed out to the left, the way a stack's previous screen leaves.
-            translate: `${push * -30}%`,
+            translate: `${push * -24}%`,
+            scale: 1 - push * 0.035,
             // Gone well before the push ends, or its credit line and tab bar
             // read through the incoming screen.
             opacity: 1 - arrive(frame, PUSH, PUSH + 13),
@@ -219,15 +313,49 @@ export const FeedbackWidgetScene: React.FC = () => {
           <FeedbackWidgetFormView
             style={{
               translate: `${(1 - push) * 100}%`,
-              boxShadow: `-14px 0 30px rgba(24, 20, 60, ${(1 - push) * 0.1})`,
+              scale: interpolate(push, [0, 1], [1.018, 1], {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+              }),
+              boxShadow: `-18px 0 42px rgba(24, 20, 60, ${(1 - push) * 0.16})`,
+            }}
+            cardStyle={{
+              boxShadow: `0 1px 3px rgba(24, 28, 45, 0.06), 0 0 ${
+                18 * titleFocus
+              }px rgba(92, 69, 223, ${0.12 * titleFocus})`,
             }}
             // Submitting clears the form, which is what the second reference
             // shows: placeholders back, counter grey, nothing focused.
             title={sent ? "" : typed}
             titleFocused={!sent && !boardPicked}
+            titleFieldStyle={{
+              boxShadow:
+                !sent && !boardPicked
+                  ? `0 0 0 ${3 * titleFocus}px rgba(92, 69, 223, ${
+                      0.1 * titleFocus
+                    })`
+                  : undefined,
+            }}
             caret={!sent && !boardPicked}
             board={boardPicked && !sent ? FORM_BOARD : null}
             boardFocused={boardPicked && !sent}
+            boardFieldStyle={{
+              backgroundColor: boardPicked && !sent ? "#f7f5ff" : undefined,
+              boxShadow:
+                boardPicked && !sent
+                  ? `0 0 0 ${3 * (1 - boardPulse)}px rgba(92, 69, 223, ${
+                      0.16 * (1 - boardPulse)
+                    })`
+                  : undefined,
+              scale:
+                boardPicked && !sent
+                  ? interpolate(frame, [BOARD_CLICK, BOARD_CLICK + 8, BOARD_CLICK + 20], [1, 1.018, 1], {
+                      extrapolateLeft: "clamp",
+                      extrapolateRight: "clamp",
+                      easing: EASE_OUT,
+                    })
+                  : undefined,
+            }}
             sending={sending}
             // One turn per second, and it only exists while the request is in
             // flight, so a rotating element never survives into the hold.
@@ -238,14 +366,67 @@ export const FeedbackWidgetScene: React.FC = () => {
               height: 46 * confirm,
               marginTop: 18 * confirm,
               opacity: confirm,
+              scale: interpolate(confirm, [0, 1], [0.96, 1], {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+                easing: EASE_OUT,
+              }),
             }}
-            submitStyle={{ scale: press(frame, SUBMIT_CLICK, 0.97) }}
+            submitStyle={{
+              scale: press(frame, SUBMIT_CLICK, 0.97),
+              boxShadow: sending
+                ? "0 10px 24px rgba(92, 69, 223, 0.28)"
+                : undefined,
+              opacity: sending ? 0.94 : 1,
+            }}
           />
         ) : null}
       </FeedbackWidget>
 
+      {frame >= SENT ? (
+        <div
+          style={{
+            position: "absolute",
+            left: FORM.submit.x - 38,
+            top: FORM.submit.y - 150,
+            width: 1,
+            height: 1,
+            opacity: successPop * successFade,
+            pointerEvents: "none",
+          }}
+        >
+          {SUCCESS_PARTICLES.map((particle, index) => (
+            <span
+              key={`${particle.color}-${index}`}
+              style={{
+                position: "absolute",
+                width: particle.size,
+                height: particle.size,
+                borderRadius: "50%",
+                backgroundColor: particle.color,
+                translate: `${interpolate(successPop, [0, 1], [0, particle.x])}px ${interpolate(
+                  successPop,
+                  [0, 1],
+                  [0, particle.y],
+                )}px`,
+                scale: interpolate(successPop, [0, 1], [0.4, 1], {
+                  extrapolateLeft: "clamp",
+                  extrapolateRight: "clamp",
+                  easing: EASE_OUT,
+                }),
+              }}
+            />
+          ))}
+        </div>
+      ) : null}
+
       <FeedbackWidgetToggle
-        style={{ scale: press(frame, OPEN_CLICK, 0.92) }}
+        style={{
+          scale: press(frame, OPEN_CLICK, 0.92),
+          boxShadow: `0 8px 24px rgba(70, 50, 190, 0.34), 0 0 ${
+            28 * togglePulse
+          }px rgba(92, 69, 223, ${0.28 * togglePulse})`,
+        }}
         chevronStyle={{
           // Up while closed, down once open: the click turns it over.
           rotate: `${interpolate(frame, [OPEN_CLICK, OPEN_CLICK + 20], [180, 0], {
@@ -255,6 +436,27 @@ export const FeedbackWidgetScene: React.FC = () => {
           })}deg`,
         }}
       />
+
+      {frame >= OPEN_CLICK && frame < OPEN_CLICK + 28 ? (
+        <div
+          style={{
+            position: "absolute",
+            left: TOGGLE.x - 32,
+            top: TOGGLE.y - 32,
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            border: `2px solid ${BRAND_PURPLE}`,
+            opacity: togglePulse,
+            scale: interpolate(frame, [OPEN_CLICK, OPEN_CLICK + 28], [1, 1.8], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+              easing: EASE_OUT,
+            }),
+            pointerEvents: "none",
+          }}
+        />
+      ) : null}
 
       <Cursor
         x={interpolate(
@@ -280,6 +482,7 @@ export const FeedbackWidgetScene: React.FC = () => {
         hand={hand}
         style={{ scale: cursorPress }}
       />
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };

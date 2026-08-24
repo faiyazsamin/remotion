@@ -75,6 +75,7 @@ const EMPTY_COPY_GAP = 14;
 const EMPTY_COPY_HEIGHT = 54;
 const EMPTY_BUTTON_GAP = 28;
 const EMPTY_BUTTON_HEIGHT = 60;
+export const NEW_ARTICLE_BUTTON_WIDTH = 200;
 
 const BODY_TOP =
   GUTTER + BOARD_TOP_BAR_HEIGHT + LOCALE_BAR_HEIGHT + TABLE_HEADER_HEIGHT;
@@ -93,6 +94,17 @@ export const newArticleCentre = (frameWidth: number) => ({
     EMPTY_BUTTON_GAP +
     EMPTY_BUTTON_HEIGHT / 2,
 });
+
+export const newArticleRect = (frameWidth: number) => {
+  const centre = newArticleCentre(frameWidth);
+
+  return {
+    x: centre.x - NEW_ARTICLE_BUTTON_WIDTH / 2,
+    y: centre.y - EMPTY_BUTTON_HEIGHT / 2,
+    width: NEW_ARTICLE_BUTTON_WIDTH,
+    height: EMPTY_BUTTON_HEIGHT,
+  };
+};
 
 /** A drawn flag, because emoji do not render in the renderer's font stack. */
 const FlagUS: React.FC = () => (
@@ -451,13 +463,14 @@ export const HelpCenterBoard: React.FC<
           style={{
             marginTop: EMPTY_BUTTON_GAP,
             height: EMPTY_BUTTON_HEIGHT,
+            width: NEW_ARTICLE_BUTTON_WIDTH,
             borderRadius: 999,
             backgroundColor: BRAND_PURPLE,
             color: "#ffffff",
             display: "flex",
             alignItems: "center",
+            justifyContent: "center",
             gap: 13,
-            padding: "0 32px",
             fontSize: 19,
             fontWeight: 700,
             boxShadow: "0 14px 30px rgba(92, 69, 223, 0.32)",

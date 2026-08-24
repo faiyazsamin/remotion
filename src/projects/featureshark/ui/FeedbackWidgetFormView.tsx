@@ -61,11 +61,13 @@ export type FeedbackWidgetFormViewProps = PartProps & {
   /** Title text entered so far. Empty shows the placeholder. */
   title?: string;
   titleFocused?: boolean;
+  titleFieldStyle?: React.CSSProperties;
   /** Whether the caret is drawn — only while the field is being typed into. */
   caret?: boolean;
   /** Selected board, or null for the unselected placeholder. */
   board?: string | null;
   boardFocused?: boolean;
+  boardFieldStyle?: React.CSSProperties;
   /** Submit is in flight: the button shows a spinner instead of its label. */
   sending?: boolean;
   /** Spinner angle in degrees, driven by the frame — CSS animation cannot render. */
@@ -93,9 +95,11 @@ export const FeedbackWidgetFormView: React.FC<FeedbackWidgetFormViewProps> = ({
   cardStyle,
   title = "",
   titleFocused,
+  titleFieldStyle,
   caret,
   board = null,
   boardFocused,
+  boardFieldStyle,
   sending,
   spinnerAngle = 0,
   showSuccess,
@@ -142,6 +146,7 @@ export const FeedbackWidgetFormView: React.FC<FeedbackWidgetFormViewProps> = ({
                 ...fieldStyle,
                 border: titleFocused ? focusedBorder : fieldStyle.border,
                 color: title ? valueColor : placeholderColor,
+                ...titleFieldStyle,
               }}
             >
               {title || "Brief description (min 20 characters)"}
@@ -184,6 +189,7 @@ export const FeedbackWidgetFormView: React.FC<FeedbackWidgetFormViewProps> = ({
                 ...fieldStyle,
                 border: boardFocused ? focusedBorder : fieldStyle.border,
                 justifyContent: "space-between",
+                ...boardFieldStyle,
               }}
             >
               <span style={{ color: board ? valueColor : "#2b2f3a" }}>

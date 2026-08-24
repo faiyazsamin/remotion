@@ -86,6 +86,8 @@ export const PublicBoard: React.FC<
     composer?: "collapsed" | "expanded";
     draft?: string;
     caret?: boolean;
+    composerStyle?: React.CSSProperties;
+    countStyle?: React.CSSProperties;
     submitStyle?: React.CSSProperties;
     voterName?: string;
     voterRole?: string;
@@ -114,6 +116,8 @@ export const PublicBoard: React.FC<
   composer,
   draft,
   caret,
+  composerStyle,
+  countStyle,
   submitStyle,
   voterName,
   voterRole,
@@ -192,6 +196,8 @@ export const PublicBoard: React.FC<
             composer={composer}
             draft={draft}
             caret={caret}
+            composerStyle={composerStyle}
+            countStyle={countStyle}
             submitStyle={submitStyle}
           />
         </div>

@@ -22,6 +22,8 @@ import {
   HelpCenterBoard,
   MEDIA_PLACEHOLDERS,
   newArticleCentre,
+  newArticleRect,
+  HELPFUL_CARD_RECT,
   HELPFUL_YES_FROM_BOTTOM,
   HELPFUL_YES_FROM_LEFT,
   HelpArticleEditor,
@@ -35,9 +37,15 @@ import {
   SITE_WIDTH,
   ToastStack,
   wizardPrimaryCentre,
+  wizardPrimaryRect,
   wizardPublishCentre,
   type Release,
 } from "./ui";
+import {
+  WIZARD_BODY_TOP,
+  WIZARD_LEFT,
+  WIZARD_WIDTH,
+} from "./ui/ArticleWizard";
 
 /** Long enough to hold on the published page, and no longer. */
 const SCENE_LENGTH = 2220;
@@ -68,6 +76,48 @@ const press = (frame: number, at: number, low: number) =>
     extrapolateRight: "clamp",
     easing: EASE_OUT,
   });
+
+const pulse = (frame: number, at: number) =>
+  interpolate(frame, [at, at + 10, at + 28], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const spotlightOpacity = (frame: number, start: number, end: number) =>
+  interpolate(frame, [start, start + 12, end - 12, end], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const Spotlight: React.FC<{
+  label: string;
+  opacity: number;
+  rect: { x: number; y: number; width: number; height: number };
+  radius?: number;
+  style?: React.CSSProperties;
+}> = ({ label, opacity, rect, radius = 18, style }) =>
+  opacity > 0.01 ? (
+    <div
+      aria-label={label}
+      style={{
+        position: "absolute",
+        left: rect.x,
+        top: rect.y,
+        width: rect.width,
+        height: rect.height,
+        borderRadius: radius,
+        pointerEvents: "none",
+        zIndex: 22,
+        boxShadow: `0 0 0 9999px rgba(18, 14, 45, ${0.4 * opacity}), 0 0 ${
+          30 * opacity
+        }px rgba(255, 255, 255, ${0.16 * opacity})`,
+        outline: `2px solid rgba(255, 255, 255, ${0.22 * opacity})`,
+        ...style,
+      }}
+    />
+  ) : null;
 
 /** Beat 1 — the rail takes us from the changelog to Help Center. */
 const RAIL_REACH_START = 44;
@@ -175,13 +225,34 @@ const RELEASES: Release[] = [
 
 const RAIL_HELP = railSlotCentre(HELP_RAIL_ACTIVE);
 const NEW_ARTICLE = newArticleCentre(SITE_WIDTH);
+const NEW_ARTICLE_RECT = newArticleRect(SITE_WIDTH);
+const CREATE_PUBLISH_WIDTH = 268;
 /* The footer button changes width when its label does, so aim per label. */
 const NEXT_CONTENT = wizardPrimaryCentre({ width: 176 });
 const NEXT_SEO = wizardPrimaryCentre({ width: 148 });
-const CREATE_PUBLISH = wizardPrimaryCentre({ width: 268 });
+const CREATE_PUBLISH = wizardPrimaryCentre({ width: CREATE_PUBLISH_WIDTH });
 const PUBLISH_NOW = wizardPublishCentre(1);
 const ACTIONS_BUTTON = actionsCentre(SITE_WIDTH);
 const VIEW_PUBLIC = actionMenuItemCentre(0, SITE_WIDTH);
+const TITLE_FIELD_RECT = {
+  x: WIZARD_LEFT + 30,
+  y: WIZARD_BODY_TOP + 54,
+  width: WIZARD_WIDTH - 60,
+  height: 58,
+};
+const PUBLISH_NOW_RECT = {
+  x: WIZARD_LEFT + 30,
+  y: PUBLISH_NOW.y - 41,
+  width: WIZARD_WIDTH - 60,
+  height: 82,
+};
+const CREATE_PUBLISH_RECT = wizardPrimaryRect({ width: CREATE_PUBLISH_WIDTH });
+const ACTIONS_MENU_ITEM_RECT = {
+  x: VIEW_PUBLIC.x - 118,
+  y: VIEW_PUBLIC.y - 26,
+  width: 236,
+  height: 52,
+};
 /*
   The Yes button, measured up from the page's bottom edge — which, once the
   scroll has run its course, is the frame's bottom edge.
@@ -338,6 +409,19 @@ export const HelpCenterScene: React.FC = () => {
   const publishNow = frame >= PUBLISH_NOW_AT;
   const editor = arrive(frame, EDITOR, EDITOR + EDITOR_LENGTH);
   const onPublic = arrive(frame, PUBLIC, PUBLIC + PUBLIC_LENGTH);
+  const newFocus = spotlightOpacity(frame, NEW_REACH_START + 4, NEW_CLICK + 16);
+  const titleFocus = spotlightOpacity(frame, TITLE_START, TITLE_END + 20);
+  const publishFocus = spotlightOpacity(frame, PUBLISH_REACH_START + 4, PUBLISH_CLICK + 16);
+  const createFocus = spotlightOpacity(frame, CREATE_REACH_START + 4, CREATE_CLICK + 16);
+  const viewPublicFocus = spotlightOpacity(frame, VIEW_REACH_START + 4, VIEW_CLICK + 16);
+  const helpfulFocus = spotlightOpacity(frame, YES_REACH_START + 4, YES_CLICK + 18);
+  const newPop = pulse(frame, NEW_CLICK);
+  const publishPop = pulse(frame, PUBLISH_CLICK);
+  const createPop = pulse(frame, CREATE_CLICK);
+  const viewPublicPop = pulse(frame, VIEW_REACH_END - 8);
+  const helpfulPop = pulse(frame, YES_CLICK);
+  const primaryWidth =
+    step === 0 ? 176 : step === 1 ? 148 : publishNow ? CREATE_PUBLISH_WIDTH : 168;
 
   return (
     <AbsoluteFill
@@ -367,7 +451,12 @@ export const HelpCenterScene: React.FC = () => {
         >
           <HelpCenterBoard
             emptyStyle={{ opacity: arrive(frame, HELP + 14, HELP + 44) }}
-            buttonStyle={{ scale: press(frame, NEW_CLICK, 0.96) }}
+            buttonStyle={{
+              scale: press(frame, NEW_CLICK, 0.96) * (1 + newPop * 0.05),
+              boxShadow: `0 ${14 + newPop * 8}px ${30 + newPop * 20}px rgba(92, 69, 223, ${
+                0.32 + newPop * 0.16
+              })`,
+            }}
           />
         </AbsoluteFill>
       ) : null}
@@ -384,19 +473,31 @@ export const HelpCenterScene: React.FC = () => {
           contentScroll={bodyScroll}
           publishOption={publishNow ? 1 : 0}
           primaryLabel={publishNow ? PUBLISH_ACTION : undefined}
+          primaryWidth={primaryWidth}
           /* Each step's body fades in on its own, under the fixed chrome. */
           bodyStyle={{
             opacity: stepIn,
             translate: `0px ${(1 - stepIn) * 10}px`,
           }}
           optionStyle={(index) =>
-            index === 1 ? { scale: press(frame, PUBLISH_CLICK, 0.985) } : {}
+            index === 1
+              ? {
+                  scale: press(frame, PUBLISH_CLICK, 0.985) * (1 + publishPop * 0.035),
+                  boxShadow: `0 ${8 * publishPop}px ${24 * publishPop}px rgba(92, 69, 223, ${
+                    0.22 * publishPop
+                  })`,
+                }
+              : {}
           }
           primaryStyle={{
             scale:
               press(frame, CONTENT_CLICK, 0.95) *
               press(frame, SEO_CLICK, 0.95) *
-              press(frame, CREATE_CLICK, 0.95),
+              press(frame, CREATE_CLICK, 0.95) *
+              (1 + createPop * 0.04),
+            boxShadow: `0 ${8 * createPop}px ${22 * createPop}px rgba(92, 69, 223, ${
+              0.26 * createPop
+            })`,
             /* Renaming itself is the visible result of choosing to publish. */
             opacity: publishNow
               ? arrive(frame, PUBLISH_NOW_AT, PUBLISH_NOW_AT + PUBLISH_LENGTH) *
@@ -451,6 +552,10 @@ export const HelpCenterScene: React.FC = () => {
                     backgroundColor: `rgba(238, 236, 251, ${
                       arrive(frame, VIEW_REACH_END - 10, VIEW_CLICK) * 0.9
                     })`,
+                    scale: 1 + viewPublicPop * 0.035,
+                    boxShadow: `0 ${5 * viewPublicPop}px ${16 * viewPublicPop}px rgba(92, 69, 223, ${
+                      0.18 * viewPublicPop
+                    })`,
                   }
                 : {}
             }
@@ -500,13 +605,67 @@ export const HelpCenterScene: React.FC = () => {
               arrive(frame, SCROLL_START, SCROLL_END) * SCROLL_DISTANCE
             }
             helpful={frame >= VOTED ? "yes" : undefined}
-            yesStyle={{ scale: press(frame, YES_CLICK, 0.96) }}
+            yesStyle={{
+              scale: press(frame, YES_CLICK, 0.96) * (1 + helpfulPop * 0.06),
+              boxShadow: `0 ${6 * helpfulPop}px ${18 * helpfulPop}px rgba(92, 69, 223, ${
+                0.22 * helpfulPop
+              })`,
+            }}
             thanksStyle={{
               opacity: arrive(frame, VOTED, VOTED + VOTED_LENGTH),
             }}
           />
         </AbsoluteFill>
       ) : null}
+
+      <Spotlight
+        label="Focus new article button"
+        opacity={newFocus}
+        rect={NEW_ARTICLE_RECT}
+        radius={999}
+        style={{
+          scale: press(frame, NEW_CLICK, 0.96) * (1 + newPop * 0.05),
+        }}
+      />
+      <Spotlight
+        label="Focus article title"
+        opacity={titleFocus}
+        rect={TITLE_FIELD_RECT}
+        radius={14}
+      />
+      <Spotlight
+        label="Focus publish now option"
+        opacity={publishFocus}
+        rect={PUBLISH_NOW_RECT}
+        radius={14}
+        style={{
+          scale: press(frame, PUBLISH_CLICK, 0.985) * (1 + publishPop * 0.035),
+        }}
+      />
+      <Spotlight
+        label="Focus publish article button"
+        opacity={createFocus}
+        rect={CREATE_PUBLISH_RECT}
+        radius={14}
+        style={{
+          scale: press(frame, CREATE_CLICK, 0.95) * (1 + createPop * 0.04),
+        }}
+      />
+      <Spotlight
+        label="Focus view public page action"
+        opacity={viewPublicFocus}
+        rect={ACTIONS_MENU_ITEM_RECT}
+        radius={12}
+        style={{
+          scale: 1 + viewPublicPop * 0.035,
+        }}
+      />
+      <Spotlight
+        label="Focus helpful question card"
+        opacity={helpfulFocus}
+        rect={HELPFUL_CARD_RECT}
+        radius={16}
+      />
 
       <Cursor
         x={interpolate(frame, CURSOR_TIMES, CURSOR_X, {
@@ -521,6 +680,7 @@ export const HelpCenterScene: React.FC = () => {
         })}
         hand
         style={{
+          zIndex: 30,
           scale:
             press(frame, RAIL_CLICK, 0.88) *
             press(frame, NEW_CLICK, 0.88) *

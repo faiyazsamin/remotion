@@ -45,6 +45,19 @@ export const wizardPrimaryCentre = ({
   y: WIZARD_TOP + WIZARD_HEIGHT - FOOTER_HEIGHT / 2,
 });
 
+export const wizardPrimaryRect = ({
+  width = 168,
+}: { width?: number } = {}) => {
+  const centre = wizardPrimaryCentre({ width });
+
+  return {
+    x: centre.x - width / 2,
+    y: centre.y - 46 / 2,
+    width,
+    height: 46,
+  };
+};
+
 const OPTION_HEIGHT = 82;
 const OPTION_GAP = 12;
 /** Where the publishing options start, measured down the SEO step. */
@@ -109,6 +122,8 @@ export const ArticleWizard: React.FC<
     contentScroll?: number;
     /** Which publishing option is chosen. */
     publishOption?: number;
+    /** Width of the footer primary button, matching `wizardPrimaryCentre`. */
+    primaryWidth?: number;
     /** Overrides the footer's primary label, e.g. once Publish Now is picked. */
     primaryLabel?: string;
     bodyStyle?: React.CSSProperties;
@@ -128,6 +143,7 @@ export const ArticleWizard: React.FC<
   revealed,
   contentScroll = 0,
   publishOption = 0,
+  primaryWidth,
   primaryLabel,
   bodyStyle,
   primaryStyle,
@@ -626,14 +642,16 @@ export const ArticleWizard: React.FC<
           <span
             style={{
               marginLeft: "auto",
+              width: primaryWidth,
               height: 46,
               borderRadius: 10,
               backgroundColor: BRAND_PURPLE,
               color: "#ffffff",
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               gap: 11,
-              padding: "0 20px",
+              padding: primaryWidth === undefined ? "0 20px" : 0,
               fontSize: 17,
               fontWeight: 700,
               whiteSpace: "nowrap",

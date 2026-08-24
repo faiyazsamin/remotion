@@ -10,17 +10,19 @@ import {
   ADMIN_NAME,
   AdminHome,
   backToFeedbackCentre,
+  BOARD_TOP_BAR_HEIGHT,
   commentButtonCentre,
-  composerCentre,
   countsFor,
   Cursor,
   DARK_MODE_FOLLOW_UP,
   DARK_MODE_QUESTIONS,
   DARK_MODE_ROW,
   DARK_MODE_TITLE,
+  DETAIL_PANEL_WIDTH,
   detailHeaderCentre,
   FeedbackBoard,
   FeedbackDetailPanel,
+  FILTER_PANEL_WIDTH,
   FPS,
   INTEGRATIONS_ROW,
   paragraph,
@@ -28,11 +30,15 @@ import {
   railSlotCentre,
   rowTitleCentre,
   railSlotCentre as railSlot,
+  ROADMAP_COLUMNS_TOP,
+  ROADMAP_MAIN_LEFT,
   ROADMAP_RAIL_ACTIVE,
   ROADMAP_STAGE_META,
   RoadmapBoard,
+  scaled,
   sharkCentre,
   SharkAiPanel,
+  SHARK_PANEL_WIDTH,
   SITE_HEIGHT,
   SITE_WIDTH,
   VISITOR_COMMENT,
@@ -43,6 +49,7 @@ import {
   type FeedbackRow,
   type PublicComment,
 } from "./ui";
+import { TABLE_ROW_HEIGHT } from "./ui/FeedbackTable";
 
 export const FeatureSharkFeedbackReviewSceneComposition = () => (
   <Composition
@@ -70,6 +77,48 @@ const press = (frame: number, at: number, low: number) =>
     extrapolateRight: "clamp",
     easing: EASE_OUT,
   });
+
+const pop = (frame: number, at: number) =>
+  interpolate(frame, [at, at + 8, at + 26], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const spotlightOpacity = (frame: number, start: number, end: number) =>
+  interpolate(frame, [start, start + 14, end - 14, end], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const Spotlight: React.FC<{
+  label: string;
+  opacity: number;
+  rect: { x: number; y: number; width: number; height: number };
+  radius?: number;
+  style?: React.CSSProperties;
+}> = ({ label, opacity, rect, radius = 18, style }) =>
+  opacity > 0.01 ? (
+    <div
+      aria-label={label}
+      style={{
+        position: "absolute",
+        left: rect.x,
+        top: rect.y,
+        width: rect.width,
+        height: rect.height,
+        borderRadius: radius,
+        pointerEvents: "none",
+        zIndex: 22,
+        boxShadow: `0 0 0 9999px rgba(18, 14, 45, ${0.42 * opacity}), 0 0 ${
+          32 * opacity
+        }px rgba(255, 255, 255, ${0.18 * opacity})`,
+        outline: `2px solid rgba(255, 255, 255, ${0.22 * opacity})`,
+        ...style,
+      }}
+    />
+  ) : null;
 
 /** Beat 1 — Admin Home, then the rail takes us to Feedback. */
 const RAIL_REACH_START = 44;
@@ -120,10 +169,12 @@ const SHARK_CLICK = 1042;
 const SWAP = SHARK_CLICK + 4;
 const SWAP_LENGTH = 30;
 
-/** A call resolves this long after it appears, unless it is still in flight. */
-const SPIN_LENGTH = 46;
-/** The older run had already finished by the time the panel opens. */
-const SETTLED = SWAP + 18;
+const SPIN_LENGTH = FPS / 2;
+const TASK_STEP = FPS / 2;
+const TASK_START = SWAP + 42;
+const TASK_COUNT = 7;
+const taskAt = (index: number) => TASK_START + TASK_STEP * index;
+const TASKS_DONE = taskAt(TASK_COUNT - 1) + SPIN_LENGTH;
 
 /**
  * What the agent did with the admin's direction. Newest run first, and newest
@@ -134,63 +185,59 @@ const LOG: {
   subject: string;
   time: string;
   at: number;
-  items: { label: string; time: string; at: number; instant?: boolean }[];
+  items: { label: string; time: string; at: number }[];
 }[] = [
   {
     subject: "acme-roadmap",
     time: "0 seconds ago",
-    at: SWAP + 74,
+    at: taskAt(5),
     items: [
       {
         label: "used GetRoadmapProgress 'acme-roadmap'",
         time: "0 seconds ago",
-        at: SWAP + 104,
+        at: taskAt(6),
       },
       {
         label: "used SearchRoadmap 'acme-roadmap'",
         time: "0 seconds ago",
-        at: SWAP + 74,
+        at: taskAt(5),
       },
     ],
   },
   {
     subject: DARK_MODE_TITLE,
     time: "2 minutes ago",
-    at: 0,
+    at: SWAP + 18,
     items: [
-      { label: "used ListRoadmaps", time: "1 second ago", at: SETTLED, instant: true },
+      { label: "used ListRoadmaps", time: "1 second ago", at: taskAt(0) },
       {
         label: "used ListFeedbackStatuses",
         time: "1 second ago",
-        at: SETTLED + 5,
-        instant: true,
+        at: taskAt(1),
       },
       {
         label: "used GetFeedbackDetail 'Enable dark mode'",
         time: "1 second ago",
-        at: SETTLED + 10,
-        instant: true,
+        at: taskAt(2),
       },
       {
         label: "Agent 'Product Manager' was prompted by Article Writer",
         time: "49 seconds ago",
-        at: SETTLED + 15,
-        instant: true,
+        at: taskAt(3),
       },
       {
         label: "Agent 'Product Manager' was prompted by Article Writer",
         time: "52 seconds ago",
-        at: SETTLED + 20,
-        instant: true,
+        at: taskAt(4),
       },
     ],
   },
 ];
 
 /** Beat 6 — the rail takes us on to the roadmap the agent just updated. */
-const ROADMAP_REACH_START = 1240;
-const ROADMAP_REACH_END = 1288;
-const ROADMAP_CLICK = 1296;
+const ROADMAP_REACH_START = TASKS_DONE + 70;
+const ROADMAP_REACH_END = ROADMAP_REACH_START + 48;
+const ROADMAP_CLICK = ROADMAP_REACH_END + 8;
 const ROADMAP = ROADMAP_CLICK + 4;
 const ROADMAP_LENGTH = 36;
 
@@ -199,6 +246,7 @@ const ROADMAP_PANEL = ROADMAP + 10;
 const ROADMAP_TOGGLE = ROADMAP + 20;
 const ROADMAP_STAGE_STAGGER = 7;
 const ROADMAP_CARD = ROADMAP + 60;
+const ROADMAP_CARD_FOCUS = ROADMAP_CARD + 22;
 
 /** The public page's own parts settle once it is up. */
 const PREVIEW_NAV = PREVIEW + 8;
@@ -271,7 +319,6 @@ const ROW_TITLE = rowTitleCentre({ filterOpen: true, index: 0 });
 /** Shark AI is closed here, so the pane's controls sit further right. */
 const PREVIEW_BUTTON = detailHeaderCentre("preview", { sharkOpen: false });
 
-const ADMIN_COMPOSER = composerCentre();
 const ADMIN_SUBMIT = commentButtonCentre();
 const BACK_LINK = backToFeedbackCentre();
 /** The filter column is open again by the time Shark AI is pressed. */
@@ -282,6 +329,66 @@ const SHARK = (() => {
 })();
 
 const RAIL_ROADMAP = railSlot(ROADMAP_RAIL_ACTIVE);
+
+const GUTTER = 12;
+const RAIL_WIDTH = scaled(46);
+const FILTER_OPEN_MAIN_LEFT =
+  GUTTER + RAIL_WIDTH + GUTTER + FILTER_PANEL_WIDTH + GUTTER;
+const ROW_SPOTLIGHT = {
+  x: FILTER_OPEN_MAIN_LEFT + 18,
+  y: ROW_TITLE.y - TABLE_ROW_HEIGHT / 2 + 5,
+  width: SITE_WIDTH - FILTER_OPEN_MAIN_LEFT - GUTTER - 36,
+  height: TABLE_ROW_HEIGHT - 10,
+};
+const DETAIL_SPOTLIGHT = {
+  x: SITE_WIDTH - GUTTER - DETAIL_PANEL_WIDTH,
+  y: GUTTER + BOARD_TOP_BAR_HEIGHT,
+  width: DETAIL_PANEL_WIDTH,
+  height: SITE_HEIGHT - GUTTER * 2 - BOARD_TOP_BAR_HEIGHT,
+};
+const PREVIEW_BUTTON_SPOTLIGHT = {
+  x: PREVIEW_BUTTON.x - 26,
+  y: PREVIEW_BUTTON.y - 26,
+  width: 52,
+  height: 52,
+};
+const PREVIEW_COMPOSER_RECT = {
+  x: 324 + 38,
+  y: 160 + 140 + 32 + 26 + 48 + 24,
+  width: 828 - 76,
+  height: 150,
+};
+const ADMIN_COMPOSER_CLICK_TARGET = {
+  x: PREVIEW_COMPOSER_RECT.x + PREVIEW_COMPOSER_RECT.width - 78,
+  y: PREVIEW_COMPOSER_RECT.y + 36,
+};
+const SHARK_PANEL_SPOTLIGHT = {
+  x: SITE_WIDTH - GUTTER - SHARK_PANEL_WIDTH,
+  y: GUTTER,
+  width: SHARK_PANEL_WIDTH,
+  height: SITE_HEIGHT - GUTTER * 2,
+};
+const ROADMAP_COLUMN_GAP = 17;
+const ROADMAP_COLUMNS_X = ROADMAP_MAIN_LEFT + 14;
+const ROADMAP_COLUMNS_WIDTH = SITE_WIDTH - ROADMAP_MAIN_LEFT - GUTTER - 28;
+const ROADMAP_COLUMN_WIDTH =
+  (ROADMAP_COLUMNS_WIDTH - ROADMAP_COLUMN_GAP * 3) / 4;
+const ROADMAP_COLUMN_HEADER_HEIGHT = 52;
+const ROADMAP_COLUMN_BODY_PADDING = 12;
+const ROADMAP_CARD_HEIGHT = 114;
+const PLANNED_CARD_SPOTLIGHT = {
+  x:
+    ROADMAP_COLUMNS_X +
+    ROADMAP_COLUMN_WIDTH +
+    ROADMAP_COLUMN_GAP +
+    ROADMAP_COLUMN_BODY_PADDING,
+  y:
+    ROADMAP_COLUMNS_TOP +
+    ROADMAP_COLUMN_HEADER_HEIGHT +
+    ROADMAP_COLUMN_BODY_PADDING,
+  width: ROADMAP_COLUMN_WIDTH - 24,
+  height: ROADMAP_CARD_HEIGHT,
+};
 
 const CURSOR_FROM = { x: -140, y: SITE_HEIGHT + 130 };
 /** Clear of the pane it just opened. */
@@ -335,8 +442,8 @@ const CURSOR_X = [
   PREVIEW_BUTTON.x,
   PREVIEW_REST.x,
   PREVIEW_REST.x,
-  ADMIN_COMPOSER.x,
-  ADMIN_COMPOSER.x,
+  ADMIN_COMPOSER_CLICK_TARGET.x,
+  ADMIN_COMPOSER_CLICK_TARGET.x,
   ADMIN_SUBMIT.x,
   ADMIN_SUBMIT.x,
   ADMIN_REST.x,
@@ -363,8 +470,8 @@ const CURSOR_Y = [
   PREVIEW_BUTTON.y,
   PREVIEW_REST.y,
   PREVIEW_REST.y,
-  ADMIN_COMPOSER.y,
-  ADMIN_COMPOSER.y,
+  ADMIN_COMPOSER_CLICK_TARGET.y,
+  ADMIN_COMPOSER_CLICK_TARGET.y,
   ADMIN_SUBMIT.y,
   ADMIN_SUBMIT.y,
   ADMIN_REST.y,
@@ -409,6 +516,53 @@ export const FeedbackReviewScene: React.FC = () => {
 
   const drafting = frame >= ADMIN_CLICK && frame < ADMIN_POSTED;
   const adminPosted = frame >= ADMIN_POSTED;
+  const rowFocus = spotlightOpacity(frame, ROW_REACH_START, DETAIL + 18);
+  const detailFocus = spotlightOpacity(frame, DETAIL + 12, PREVIEW_REACH_START - 8);
+  const previewButtonFocus = spotlightOpacity(
+    frame,
+    PREVIEW_REACH_START + 4,
+    PREVIEW_CLICK + 12,
+  );
+  const composerFocus = spotlightOpacity(frame, ADMIN_CLICK, ADMIN_SUBMIT_CLICK);
+  const composerPop = arrive(frame, ADMIN_CLICK, ADMIN_CLICK + 42);
+  const composerZoom =
+    frame < ADMIN_POSTED
+      ? interpolate(frame, [ADMIN_CLICK, ADMIN_CLICK + 34, ADMIN_CLICK + 92], [1, 1.08, 1.04], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+          easing: EASE_OUT,
+        })
+      : 1;
+  const adminPostBurst = pop(frame, ADMIN_POSTED);
+  const sharkFocus = spotlightOpacity(frame, SHARK_REACH_START + 4, ROADMAP_REACH_START - 10);
+  const roadmapCardAppear = arrive(frame, ROADMAP_CARD, ROADMAP_CARD_FOCUS);
+  const roadmapPayoff = arrive(frame, ROADMAP_CARD_FOCUS, ROADMAP_CARD_FOCUS + 14);
+  const roadmapCardZoom =
+    frame >= ROADMAP_CARD_FOCUS
+      ? interpolate(
+          frame,
+          [ROADMAP_CARD_FOCUS, ROADMAP_CARD_FOCUS + 14, ROADMAP_CARD_FOCUS + 46],
+          [1, 1.16, 1.08],
+          {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+            easing: EASE_OUT,
+          },
+        )
+      : 1;
+  const roadmapCardLift =
+    frame >= ROADMAP_CARD_FOCUS
+      ? interpolate(
+          frame,
+          [ROADMAP_CARD_FOCUS, ROADMAP_CARD_FOCUS + 14, ROADMAP_CARD_FOCUS + 46],
+          [0, -8, 0],
+          {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+            easing: EASE_OUT,
+          },
+        )
+      : 0;
 
   // Typed a character at a time, so the composer shows real progress.
   const typed = ADMIN_COMMENT.slice(
@@ -437,6 +591,11 @@ export const FeedbackReviewScene: React.FC = () => {
             translate: `0px ${
               (1 - arrive(frame, ADMIN_POSTED, ADMIN_POSTED + 20)) * -12
             }px`,
+            scale: interpolate(frame, [ADMIN_POSTED, ADMIN_POSTED + 14, ADMIN_POSTED + 32], [0.985, 1.01, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+              easing: EASE_OUT,
+            }),
           },
         },
         ...PUBLIC_THREAD,
@@ -450,6 +609,17 @@ export const FeedbackReviewScene: React.FC = () => {
       // The board is already populated; the rows just settle in behind the
       // navigation rather than arriving as news.
       opacity: arrive(frame, BOARD - 20 + index * 8, BOARD + 10 + index * 8),
+      backgroundColor:
+        index === 0 && frame < ROW_CLICK
+          ? `rgba(246, 245, 253, ${0.16 + rowFocus * 0.28})`
+          : index === 0 && frame >= ROW_CLICK
+            ? "#f6f5fd"
+            : undefined,
+      boxShadow:
+        index === 0 && rowFocus
+          ? `0 0 ${30 * rowFocus}px rgba(92, 69, 223, ${0.14 * rowFocus})`
+          : undefined,
+      scale: index === 0 ? 1 + rowFocus * 0.006 : undefined,
     },
   }));
 
@@ -473,10 +643,26 @@ export const FeedbackReviewScene: React.FC = () => {
           return {
             label: item.label,
             time: item.time,
-            done: item.instant || frame >= item.at + SPIN_LENGTH,
+            done: frame >= item.at + SPIN_LENGTH,
             style: {
               opacity: shown,
               translate: `0px ${(1 - shown) * 6}px`,
+              backgroundColor:
+                frame >= item.at && frame < item.at + SPIN_LENGTH
+                  ? `rgba(246, 245, 253, ${0.32 * shown})`
+                  : frame >= item.at + SPIN_LENGTH
+                    ? `rgba(230, 247, 239, ${
+                        0.12 *
+                        arrive(
+                          frame,
+                          item.at + SPIN_LENGTH,
+                          item.at + SPIN_LENGTH + 16,
+                        )
+                      })`
+                    : undefined,
+              borderRadius: 10,
+              padding: "8px 10px",
+              marginLeft: -10,
             },
           };
         }),
@@ -497,10 +683,12 @@ export const FeedbackReviewScene: React.FC = () => {
               votes: 1,
               score: "20k",
               style: {
-                opacity: arrive(frame, ROADMAP_CARD, ROADMAP_CARD + 22),
-                translate: `0px ${
-                  (1 - arrive(frame, ROADMAP_CARD, ROADMAP_CARD + 22)) * -14
-                }px`,
+                opacity: roadmapCardAppear,
+                translate: `0px ${(1 - roadmapCardAppear) * -14 + roadmapCardLift}px`,
+                scale: roadmapCardZoom,
+                boxShadow: `0 ${8 + 14 * roadmapPayoff}px ${
+                  18 + 44 * roadmapPayoff
+                }px rgba(92, 69, 223, ${0.1 + 0.18 * roadmapPayoff})`,
               },
             },
           ]
@@ -537,7 +725,12 @@ export const FeedbackReviewScene: React.FC = () => {
             thread={DARK_THREAD}
             // Fades in behind its own reveal so the contents are not visible
             // squeezed into a few pixels of open pane.
-            style={{ opacity: arrive(frame, DETAIL + 6, DETAIL + 24) }}
+            style={{
+              opacity: arrive(frame, DETAIL + 6, DETAIL + 24),
+              boxShadow: `-18px 0 42px rgba(24, 20, 60, ${
+                0.1 * detailFocus
+              })`,
+            }}
           />
         }
         sharkStyle={{
@@ -546,7 +739,14 @@ export const FeedbackReviewScene: React.FC = () => {
           backgroundColor:
             frame >= SHARK_CLICK - 4 && frame <= SHARK_CLICK + 7
               ? "#f4f1fe"
-              : "#ffffff",
+              : sharkFocus
+                ? "#faf8ff"
+                : "#ffffff",
+          boxShadow: sharkFocus
+            ? `0 0 ${22 * sharkFocus}px rgba(92, 69, 223, ${
+                0.2 * sharkFocus
+              })`
+            : undefined,
         }}
         filterCollapse={swap}
         sharkOpen={swap}
@@ -555,7 +755,13 @@ export const FeedbackReviewScene: React.FC = () => {
             runs={runs}
             // One turn per second while anything is in flight.
             spinnerAngle={frame * (360 / FPS)}
-            style={{ opacity: arrive(frame, SWAP + 6, SWAP + 24) }}
+            style={{
+              opacity: arrive(frame, SWAP + 6, SWAP + 24),
+              boxShadow: `-18px 0 48px rgba(24, 20, 60, ${
+                0.14 * swap
+              })`,
+              borderLeft: `1px solid rgba(92, 69, 223, ${0.16 * swap})`,
+            }}
           />
         }
       />
@@ -621,7 +827,31 @@ export const FeedbackReviewScene: React.FC = () => {
             composer={drafting ? "expanded" : "collapsed"}
             draft={typed}
             caret={drafting}
-            submitStyle={{ scale: press(frame, ADMIN_SUBMIT_CLICK, 0.95) }}
+            composerStyle={{
+              borderColor: `rgba(92, 69, 223, ${0.12 + composerFocus * 0.42})`,
+              boxShadow: `0 0 ${42 * composerPop}px rgba(92, 69, 223, ${
+                0.13 * composerPop
+              })`,
+              backgroundColor: composerFocus
+                ? `rgba(255, 255, 255, ${0.96 + 0.04 * composerFocus})`
+                : undefined,
+              transformOrigin: "50% 50%",
+              scale: composerZoom,
+            }}
+            countStyle={{
+              scale: 1 + adminPostBurst * 0.18,
+              boxShadow: `0 0 ${18 * adminPostBurst}px rgba(92, 69, 223, ${
+                0.24 * adminPostBurst
+              })`,
+            }}
+            submitStyle={{
+              scale:
+                press(frame, ADMIN_SUBMIT_CLICK, 0.95) *
+                (1 + adminPostBurst * 0.06),
+              boxShadow: `0 ${8 * adminPostBurst}px ${
+                22 * adminPostBurst
+              }px rgba(92, 69, 223, ${0.26 * adminPostBurst})`,
+            }}
             navStyle={{ opacity: arrive(frame, PREVIEW_NAV, PREVIEW_NAV + 20) }}
             headerStyle={{
               opacity: arrive(frame, PREVIEW_HEADER, PREVIEW_HEADER + 20),
@@ -672,12 +902,60 @@ export const FeedbackReviewScene: React.FC = () => {
             panelStyle={{
               opacity: arrive(frame, ROADMAP_PANEL, ROADMAP_PANEL + 20),
             }}
+            topBarStyle={{
+              opacity: arrive(frame, ROADMAP_PANEL, ROADMAP_PANEL + 20),
+            }}
             toggleStyle={{
               opacity: arrive(frame, ROADMAP_TOGGLE, ROADMAP_TOGGLE + 20),
             }}
           />
         </AbsoluteFill>
       ) : null}
+
+      <Spotlight
+        label="Focus feedback row"
+        opacity={spotlightOpacity(frame, ROW_REACH_START, DETAIL + 14)}
+        rect={ROW_SPOTLIGHT}
+        radius={16}
+      />
+      <Spotlight
+        label="Focus detail pane"
+        opacity={detailFocus}
+        rect={DETAIL_SPOTLIGHT}
+        radius={16}
+      />
+      <Spotlight
+        label="Focus preview button"
+        opacity={previewButtonFocus}
+        rect={PREVIEW_BUTTON_SPOTLIGHT}
+        radius={14}
+      />
+      <Spotlight
+        label="Focus admin comment composer"
+        opacity={composerFocus}
+        rect={PREVIEW_COMPOSER_RECT}
+        radius={14}
+        style={{
+          transformOrigin: "50% 50%",
+          scale: composerZoom,
+        }}
+      />
+      <Spotlight
+        label="Focus Shark AI panel"
+        opacity={spotlightOpacity(frame, SWAP + 8, ROADMAP_REACH_START - 12)}
+        rect={SHARK_PANEL_SPOTLIGHT}
+        radius={18}
+      />
+      <Spotlight
+        label="Focus roadmap planned card"
+        opacity={roadmapPayoff}
+        rect={PLANNED_CARD_SPOTLIGHT}
+        radius={16}
+        style={{
+          transformOrigin: "50% 50%",
+          scale: roadmapCardZoom,
+        }}
+      />
 
       <Cursor
         x={interpolate(frame, CURSOR_TIMES, CURSOR_X, {
@@ -696,6 +974,7 @@ export const FeedbackReviewScene: React.FC = () => {
           frame >= ADMIN_REACH_START
         }
         style={{
+          zIndex: 30,
           scale:
             press(frame, RAIL_CLICK, 0.88) *
             press(frame, ROW_CLICK, 0.88) *

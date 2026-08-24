@@ -158,7 +158,12 @@ export {
 } from "./RoadmapPanel";
 export {
   BULK_BAR_HEIGHT,
+  BULK_BAR_LEFT,
   BULK_BAR_TOP,
+  BULK_BAR_WIDTH,
+  BULK_MENU_ITEM_HEIGHT,
+  BULK_MENU_PADDING,
+  BULK_MENU_WIDTH,
   BulkActionBar,
   bulkItemCentre,
   bulkMenuItemCentre,
@@ -251,6 +256,7 @@ export {
   WIZARD_TOP,
   WIZARD_WIDTH,
   wizardPrimaryCentre,
+  wizardPrimaryRect,
   wizardPublishCentre,
 } from "./ArticleWizard";
 export {
@@ -258,6 +264,7 @@ export {
   HELP_RAIL_ACTIVE,
   HelpCenterBoard,
   newArticleCentre,
+  newArticleRect,
 } from "./HelpCenterBoard";
 export {
   ARTICLE_BLOCKS,
@@ -279,6 +286,7 @@ export {
   HelpArticleEditor,
 } from "./HelpArticleEditor";
 export {
+  HELPFUL_CARD_RECT,
   HELPFUL_YES_FROM_BOTTOM,
   HELPFUL_YES_FROM_LEFT,
   PublicHelpArticle,

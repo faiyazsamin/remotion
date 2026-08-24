@@ -32,10 +32,6 @@ export {
   FeedbackWidgetScene,
 } from "./FeedbackWidgetScene";
 export {
-  FeatureSharkPublicBoardSceneComposition,
-  PublicBoardScene,
-} from "./PublicBoardScene";
-export {
   FeatureSharkPublicBoardScenePart2Composition,
   PublicBoardScenePart2,
 } from "./PublicBoardScenePart2";

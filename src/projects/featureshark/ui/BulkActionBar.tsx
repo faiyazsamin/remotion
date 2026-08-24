@@ -74,8 +74,11 @@ export const bulkMenuItemCentre = (index: number, itemCount: number) => {
 
 /** A menu opened out of one of the bar's controls. */
 export const BulkMenu: React.FC<
-  PartProps & { items: { label: string; icon: React.ReactNode }[] }
-> = ({ style, items }) => {
+  PartProps & {
+    items: { label: string; icon: React.ReactNode }[];
+    itemStyle?: (label: string, index: number) => React.CSSProperties;
+  }
+> = ({ style, items, itemStyle }) => {
   const height = items.length * BULK_MENU_ITEM_HEIGHT + BULK_MENU_PADDING * 2;
 
   return (
@@ -96,7 +99,7 @@ export const BulkMenu: React.FC<
         ...style,
       }}
     >
-      {items.map((item) => (
+      {items.map((item, index) => (
         <div
           key={item.label}
           style={{
@@ -108,6 +111,7 @@ export const BulkMenu: React.FC<
             boxSizing: "border-box",
             fontSize: 16.5,
             color: "#20242f",
+            ...itemStyle?.(item.label, index),
           }}
         >
           {item.icon}

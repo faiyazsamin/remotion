@@ -170,6 +170,8 @@ export type PublicDiscussionProps = PartProps & {
   /** Text typed so far. */
   draft?: string;
   caret?: boolean;
+  countStyle?: React.CSSProperties;
+  composerStyle?: React.CSSProperties;
   submitStyle?: React.CSSProperties;
 };
 
@@ -185,6 +187,8 @@ export const PublicDiscussion: React.FC<PublicDiscussionProps> = ({
   composer = "collapsed",
   draft = "",
   caret,
+  countStyle,
+  composerStyle,
   submitStyle,
 }) => {
   const expanded = composer === "expanded";
@@ -235,6 +239,7 @@ export const PublicDiscussion: React.FC<PublicDiscussionProps> = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              ...countStyle,
             }}
           >
             {comments.length}
@@ -271,6 +276,7 @@ export const PublicDiscussion: React.FC<PublicDiscussionProps> = ({
           // Mid-typing the draft can end on a space. HTML would collapse it and
           // sit the caret flush against the last word, so hold it literally.
           whiteSpace: "pre-wrap",
+          ...composerStyle,
         }}
       >
         {expanded ? (

@@ -83,6 +83,9 @@ export const RichText: React.FC<{ text: string }> = ({ text }) => (
         style={{
           color: run.mention ? BRAND_PURPLE : undefined,
           fontWeight: run.mention || run.bold ? 700 : undefined,
+          backgroundColor: run.mention ? "#f1eefc" : undefined,
+          borderRadius: run.mention ? 7 : undefined,
+          padding: run.mention ? "1px 5px 2px" : undefined,
           // A mention is one token: never let a line break land inside the name.
           whiteSpace: run.mention ? "nowrap" : undefined,
         }}

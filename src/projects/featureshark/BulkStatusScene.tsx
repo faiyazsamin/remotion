@@ -7,9 +7,15 @@ import {
 } from "remotion";
 import {
   BULK_BAR_HEIGHT,
+  BULK_BAR_LEFT,
   BulkActionBar,
+  BULK_BAR_TOP,
+  BULK_BAR_WIDTH,
   bulkItemCentre,
   bulkMenuItemCentre,
+  BULK_MENU_ITEM_HEIGHT,
+  BULK_MENU_PADDING,
+  BULK_MENU_WIDTH,
   BulkMenu,
   countsFor,
   Cursor,
@@ -23,6 +29,7 @@ import {
   INTEGRATIONS_TITLE,
   sharkCentre,
   SharkAiPanel,
+  SHARK_PANEL_WIDTH,
   SITE_HEIGHT,
   SITE_WIDTH,
   STATUS_META,
@@ -60,6 +67,46 @@ const press = (frame: number, at: number, low: number) =>
     easing: EASE_OUT,
   });
 
+const pulse = (frame: number, at: number) =>
+  interpolate(frame, [at, at + 10, at + 28], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const spotlightOpacity = (frame: number, start: number, end: number) =>
+  interpolate(frame, [start, start + 12, end - 12, end], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: EASE_OUT,
+  });
+
+const Spotlight: React.FC<{
+  label: string;
+  opacity: number;
+  rect: { x: number; y: number; width: number; height: number };
+  radius?: number;
+}> = ({ label, opacity, rect, radius = 18 }) =>
+  opacity > 0.01 ? (
+    <div
+      aria-label={label}
+      style={{
+        position: "absolute",
+        left: rect.x,
+        top: rect.y,
+        width: rect.width,
+        height: rect.height,
+        borderRadius: radius,
+        pointerEvents: "none",
+        zIndex: 22,
+        boxShadow: `0 0 0 9999px rgba(18, 14, 45, ${0.4 * opacity}), 0 0 ${
+          30 * opacity
+        }px rgba(255, 255, 255, ${0.16 * opacity})`,
+        outline: `2px solid rgba(255, 255, 255, ${0.2 * opacity})`,
+      }}
+    />
+  ) : null;
+
 /** Beat 1 — select every row. */
 const SELECT_REACH_START = 44;
 const SELECT_REACH_END = 92;
@@ -86,16 +133,11 @@ const SHARK_REACH_END = 548;
 const SHARK_CLICK = 556;
 const SWAP = SHARK_CLICK + 4;
 const SWAP_LENGTH = 30;
-const RUNS_START = SWAP + 40;
-const RUN_STAGGER = 14;
+const RUNS_START = SWAP + 34;
+const TASK_STEP = FPS / 2;
 /** The agent announces itself once its log is on screen. */
 const CHANGELOG_TOAST = SWAP + 80;
-/**
- * Late in the scene the agent logs a fresh call, so the last thing the shot does
- * is show work happening rather than work already done.
- */
-const LIVE_LINE = 700;
-const SPIN_LENGTH = 46;
+const SPIN_LENGTH = FPS / 2;
 
 /** Both requests start mid-flight; the admin marks them both done. */
 const STATUS_BEFORE = "In Progress";
@@ -169,11 +211,6 @@ const CHANGELOG_RUNS: {
   {
     subject: DARK_MODE_TITLE,
     items: [
-      {
-        label: "generated changelog content",
-        time: "0 seconds ago",
-        at: LIVE_LINE,
-      },
       { label: "generated changelog content" },
     ],
   },
@@ -214,12 +251,38 @@ const AgentAvatar: React.FC = () => (
 const CHECKBOX = headerCheckboxCentre({ filterOpen: true });
 const STATUS_BUTTON = bulkItemCentre("Status");
 const PICK = bulkMenuItemCentre(PICK_INDEX, STATUS_MENU.length);
+const SHARK_BUTTON = sharkCentre();
 /** The filter column is still open when Shark AI is pressed. */
 const SHARK = (() => {
-  const centre = sharkCentre();
-
-  return { x: centre.x + 46, y: centre.y };
+  return { x: SHARK_BUTTON.x + 46, y: SHARK_BUTTON.y };
 })();
+const GUTTER = 12;
+const BULK_BAR_RECT = {
+  x: BULK_BAR_LEFT,
+  y: BULK_BAR_TOP,
+  width: BULK_BAR_WIDTH,
+  height: BULK_BAR_HEIGHT,
+};
+const MENU_HEIGHT =
+  STATUS_MENU.length * BULK_MENU_ITEM_HEIGHT + BULK_MENU_PADDING * 2;
+const STATUS_MENU_RECT = {
+  x: BULK_BAR_LEFT + 180,
+  y: BULK_BAR_TOP - 8 - MENU_HEIGHT,
+  width: BULK_MENU_WIDTH,
+  height: MENU_HEIGHT,
+};
+const SHARK_BUTTON_RECT = {
+  x: SHARK_BUTTON.x - 73,
+  y: SHARK_BUTTON.y - 26,
+  width: 146,
+  height: 52,
+};
+const SHARK_PANEL_RECT = {
+  x: SITE_WIDTH - GUTTER - SHARK_PANEL_WIDTH,
+  y: GUTTER,
+  width: SHARK_PANEL_WIDTH,
+  height: SITE_HEIGHT - GUTTER * 2,
+};
 
 const CURSOR_FROM = { x: -140, y: SITE_HEIGHT + 130 };
 /** Pauses clear of the rows once the change lands. */
@@ -294,13 +357,46 @@ export const BulkStatusScene: React.FC = () => {
   const menuLeaving = arrive(frame, PICK_CLICK, PICK_CLICK + 12);
   const swap = arrive(frame, SWAP, SWAP + SWAP_LENGTH);
   const spinnerAngle = frame * (360 / FPS);
+  const barFocus = spotlightOpacity(frame, BAR, STATUS_REACH_START + 26);
+  const menuFocus = spotlightOpacity(frame, MENU, PICK_CLICK + 16);
+  const sharkButtonFocus = spotlightOpacity(frame, SHARK_REACH_START + 4, SHARK_CLICK + 12);
+  const sharkPanelFocus = arrive(frame, SWAP + SWAP_LENGTH, SWAP + SWAP_LENGTH + 18);
 
-  const rows: FeedbackRow[] = ROWS.map((row) => ({
-    ...row,
-    // The whole point of the beat: the status is what changes.
-    status: applied ? STATUS_AFTER : row.status,
-    checked: selected,
-  }));
+  const rows: FeedbackRow[] = ROWS.map((row, index) => {
+    const selectedPulse = pulse(frame, SELECT_CLICK + index * 5);
+    const statusPulse = pulse(frame, APPLIED + index * 9);
+
+    return {
+      ...row,
+      // The whole point of the beat: the status is what changes.
+      status: applied ? STATUS_AFTER : row.status,
+      checked: selected,
+      style: {
+        backgroundColor: selected
+          ? `rgba(246, 245, 253, ${0.42 + selectedPulse * 0.18})`
+          : applied
+            ? `rgba(234, 250, 242, ${
+                0.18 *
+                arrive(frame, APPLIED + index * 9, APPLIED + 24 + index * 9)
+              })`
+            : undefined,
+        boxShadow:
+          selectedPulse > 0 || statusPulse > 0
+            ? `0 0 ${26 * Math.max(selectedPulse, statusPulse)}px rgba(92, 69, 223, ${
+                0.12 * Math.max(selectedPulse, statusPulse)
+              })`
+            : undefined,
+      },
+      statusStyle: {
+        scale: applied ? 1 + statusPulse * 0.1 : undefined,
+        boxShadow: applied
+          ? `0 ${5 * statusPulse}px ${16 * statusPulse}px rgba(47, 180, 124, ${
+              0.22 * statusPulse
+            })`
+          : undefined,
+      },
+    };
+  });
 
   const toasts = [
     ...TOASTS.map((toast) => ({ ...toast, at: APPLIED + toast.at })),
@@ -328,38 +424,58 @@ export const BulkStatusScene: React.FC = () => {
       };
     });
 
-  /** The changelog agent's log. Its calls were all finished before we looked. */
-  const runs: AgentRun[] = CHANGELOG_RUNS.filter(
-    (_, index) => frame >= RUNS_START + index * RUN_STAGGER,
-  ).map((run, index) => {
-    const at = RUNS_START + index * RUN_STAGGER;
+  const runItemOffset = (index: number) =>
+    CHANGELOG_RUNS.slice(0, index).reduce(
+      (total, entry) => total + entry.items.length,
+      0,
+    );
+  const totalLogItems = CHANGELOG_RUNS.reduce(
+    (total, entry) => total + entry.items.length,
+    0,
+  );
+
+  /** The changelog agent's log resolves on a visible half-second cadence. */
+  const runs: AgentRun[] = CHANGELOG_RUNS.flatMap((run, index) => {
+    const previousItems = runItemOffset(index);
+    const at = RUNS_START + previousItems * TASK_STEP;
+
+    if (frame < at) {
+      return [];
+    }
+
     const shown = arrive(frame, at, at + 20);
 
-    return {
-      agent: CHANGELOG_AGENT,
-      subject: run.subject,
-      time: CHANGELOG_TIME,
-      style: {
-        opacity: shown,
-        translate: `0px ${(1 - shown) * -10}px`,
-      },
-      items: run.items
-        .filter((item) => item.at === undefined || frame >= item.at)
-        .map((item) => {
-          const shown =
-            item.at === undefined ? 1 : arrive(frame, item.at, item.at + 14);
+    return [
+      {
+        agent: CHANGELOG_AGENT,
+        subject: run.subject,
+        time: CHANGELOG_TIME,
+        style: {
+          opacity: shown,
+          translate: `0px ${(1 - shown) * -10}px`,
+        },
+        items: run.items
+          .filter((_, itemIndex) => {
+            const itemAt = RUNS_START + (previousItems + itemIndex) * TASK_STEP;
 
-          return {
-            label: item.label,
-            time: item.time ?? CHANGELOG_TIME,
-            done: item.at === undefined || frame >= item.at + SPIN_LENGTH,
-            style: {
-              opacity: shown,
-              translate: `0px ${(1 - shown) * 6}px`,
-            },
-          };
-        }),
-    };
+            return frame >= itemAt;
+          })
+          .map((item, itemIndex) => {
+            const itemAt = RUNS_START + (previousItems + itemIndex) * TASK_STEP;
+            const shown = arrive(frame, itemAt, itemAt + 14);
+
+            return {
+              label: item.label,
+              time: item.time ?? CHANGELOG_TIME,
+              done: frame >= itemAt + SPIN_LENGTH,
+              style: {
+                opacity: shown,
+                translate: `0px ${(1 - shown) * 6}px`,
+              },
+            };
+          }),
+      },
+    ];
   });
 
   return (
@@ -386,7 +502,7 @@ export const BulkStatusScene: React.FC = () => {
             runs={runs}
             spinnerAngle={spinnerAngle}
             loadMore={
-              frame >= RUNS_START + CHANGELOG_RUNS.length * RUN_STAGGER
+              frame >= RUNS_START + totalLogItems * TASK_STEP
             }
             style={{ opacity: arrive(frame, SWAP + 6, SWAP + 24) }}
           />
@@ -403,6 +519,16 @@ export const BulkStatusScene: React.FC = () => {
                     (1 - bar) * BULK_BAR_HEIGHT +
                     barLeaving * BULK_BAR_HEIGHT
                   }px`,
+                  scale: interpolate(
+                    frame,
+                    [BAR, BAR + 12, BAR + BAR_LENGTH],
+                    [0.96, 1.03, 1],
+                    {
+                      extrapolateLeft: "clamp",
+                      extrapolateRight: "clamp",
+                      easing: EASE_OUT,
+                    },
+                  ),
                 }}
               />
             ) : null}
@@ -423,6 +549,23 @@ export const BulkStatusScene: React.FC = () => {
                     },
                   ),
                 }}
+                itemStyle={(label) => {
+                  const completedPulse = pulse(frame, PICK_REACH_END - 14);
+
+                  return label === STATUS_AFTER
+                    ? {
+                        backgroundColor: `rgba(234, 250, 242, ${
+                          0.7 + completedPulse * 0.3
+                        })`,
+                        color: "#1f8a5b",
+                        borderRadius: 9,
+                        scale: 1 + completedPulse * 0.04,
+                        boxShadow: `0 ${4 * completedPulse}px ${
+                          14 * completedPulse
+                        }px rgba(47, 180, 124, ${0.2 * completedPulse})`,
+                      }
+                    : {};
+                }}
               />
             ) : null}
 
@@ -431,6 +574,31 @@ export const BulkStatusScene: React.FC = () => {
             ) : null}
           </>
         }
+      />
+
+      <Spotlight
+        label="Focus bulk action bar"
+        opacity={barFocus}
+        rect={BULK_BAR_RECT}
+        radius={999}
+      />
+      <Spotlight
+        label="Focus status menu"
+        opacity={menuFocus}
+        rect={STATUS_MENU_RECT}
+        radius={14}
+      />
+      <Spotlight
+        label="Focus Shark AI button"
+        opacity={sharkButtonFocus}
+        rect={SHARK_BUTTON_RECT}
+        radius={14}
+      />
+      <Spotlight
+        label="Focus Shark AI panel"
+        opacity={sharkPanelFocus}
+        rect={SHARK_PANEL_RECT}
+        radius={18}
       />
 
       <Cursor
