@@ -113,7 +113,9 @@ export const ArticleWizard: React.FC<
     topic: string;
     /** Still typing the title, so it shows a caret. */
     titleTyping?: boolean;
+    hasImage?: boolean;
     imageBackground?: string;
+    imageStyle?: React.CSSProperties;
     /** The article body, revealed as far as it has been typed. */
     blocks?: ArticleBlock[];
     /** How many characters of the body are in, or `undefined` for all of it. */
@@ -138,7 +140,9 @@ export const ArticleWizard: React.FC<
   title,
   topic,
   titleTyping,
+  hasImage = true,
   imageBackground,
+  imageStyle,
   blocks = [],
   revealed,
   contentScroll = 0,
@@ -325,33 +329,52 @@ export const ArticleWizard: React.FC<
 
               <div style={{ marginTop: 26 }}>
                 <Label>Featured Image</Label>
-                <div
-                  style={{
-                    marginTop: 12,
-                    height: 262,
-                    borderRadius: 12,
-                    background: imageBackground,
-                    position: "relative",
-                  }}
-                >
-                  <span
+                {hasImage ? (
+                  <div
                     style={{
-                      position: "absolute",
-                      top: 12,
-                      right: 12,
-                      width: 30,
-                      height: 30,
-                      borderRadius: 8,
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
-                      color: "#4d5462",
+                      marginTop: 12,
+                      height: 262,
+                      borderRadius: 12,
+                      background: imageBackground,
+                      position: "relative",
+                      ...imageStyle,
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 12,
+                        right: 12,
+                        width: 30,
+                        height: 30,
+                        borderRadius: 8,
+                        backgroundColor: "rgba(255, 255, 255, 0.9)",
+                        color: "#4d5462",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <IconClose size={15} />
+                    </span>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      height: 262,
+                      borderRadius: 12,
+                      border: "1.6px dashed #d6d9e2",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      fontSize: 17,
+                      color: "#4d5462",
                     }}
                   >
-                    <IconClose size={15} />
-                  </span>
-                </div>
+                    Add a featured image
+                  </div>
+                )}
               </div>
             </div>
           ) : null}

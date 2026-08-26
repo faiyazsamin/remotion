@@ -24,15 +24,13 @@ import { SHARK_PANEL_WIDTH } from "./SharkAiPanel";
 import {
   IconBook,
   IconCalendar,
-  IconChart,
-  IconChat,
   IconChip,
   IconClipboard,
-  IconHome,
+  IconFeedbackRail,
+  IconHomeRail,
   IconMap,
   IconSettings,
   IconSurveys,
-  IconSwitchWorkspace,
   IconUploadInbox,
   IconUserPlus,
   IconUsers,
@@ -56,19 +54,18 @@ const RAIL_WIDTH = scaled(46);
  * the page you are on, so the third slot is active and tinted green.
  */
 const RAIL_ICONS = [
-  <IconHome key="home" />,
-  <IconUploadInbox key="upload" />,
-  <IconChat key="chat" />,
-  <IconMap key="map" />,
-  <IconCalendar key="calendar" />,
-  <IconBook key="book" />,
-  <IconClipboard key="clipboard" />,
+  <IconHomeRail key="home" />,
+  <IconUploadInbox key="support" />,
+  <IconFeedbackRail key="feedback" />,
+  <IconMap key="roadmap" />,
+  <IconCalendar key="changelog" />,
+  <IconBook key="help" />,
+  <IconClipboard key="surveys" />,
   <IconUsers key="users" />,
-  <IconUserPlus key="user-plus" />,
-  <IconSurveys key="surveys" />,
-  <IconChart key="chart" />,
+  <IconUserPlus key="team" />,
+  <IconSurveys key="integrations" />,
   <IconSettings key="settings" />,
-  <IconChip key="chip" />,
+  <IconChip key="agents" />,
 ];
 
 /** Index of the rail slot for this page. */
@@ -185,8 +182,13 @@ export const sharkCloseCentre = () => ({
 export const FeedbackBoard: React.FC<
   PartProps & {
     railIconStyle?: (index: number) => React.CSSProperties;
+    railPreviousActiveIndex?: number;
+    railPreviousAccent?: string;
+    railActiveProgress?: number;
+    railActiveIndicatorOpacity?: number;
     panelStyle?: React.CSSProperties;
     topBarStyle?: React.CSSProperties;
+    contentStyle?: React.CSSProperties;
     sharkStyle?: React.CSSProperties;
     /** Rows, newest first. */
     rows: FeedbackRow[];
@@ -211,8 +213,13 @@ export const FeedbackBoard: React.FC<
 > = ({
   style,
   railIconStyle,
+  railPreviousActiveIndex,
+  railPreviousAccent,
+  railActiveProgress,
+  railActiveIndicatorOpacity,
   panelStyle,
   topBarStyle,
+  contentStyle,
   sharkStyle,
   rows,
   counts,
@@ -242,7 +249,10 @@ export const FeedbackBoard: React.FC<
       icons={RAIL_ICONS}
       activeIndex={BOARD_RAIL_ACTIVE}
       activeAccent="#2fb47c"
-      footer={<IconSwitchWorkspace />}
+      previousActiveIndex={railPreviousActiveIndex}
+      previousActiveAccent={railPreviousAccent}
+      activeProgress={railActiveProgress}
+      activeIndicatorOpacity={railActiveIndicatorOpacity}
       iconStyle={railIconStyle}
       style={{ background: "transparent" }}
     />
@@ -274,6 +284,7 @@ export const FeedbackBoard: React.FC<
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        ...contentStyle,
       }}
     >
       <FeedbackBoardTopBar style={topBarStyle} sharkStyle={sharkStyle} />

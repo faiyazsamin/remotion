@@ -211,6 +211,7 @@ const SHARK = (() => {
 
   return { x: centre.x + 46, y: centre.y };
 })();
+const SHARK_BUTTON = sharkCentre();
 const ROW_TITLE_FILTER_OPEN = rowTitleCentre({ filterOpen: true });
 const ROW_TITLE = rowTitleCentre();
 const EXPAND = detailExpandCentre();
@@ -230,6 +231,12 @@ const ROW_SPOTLIGHT = {
   y: ROW_TITLE_FILTER_OPEN.y - TABLE_ROW_HEIGHT / 2 + 5,
   width: SITE_WIDTH - FILTER_OPEN_MAIN_LEFT - GUTTER - 36,
   height: TABLE_ROW_HEIGHT - 10,
+};
+const SHARK_BUTTON_SPOTLIGHT = {
+  x: SHARK_BUTTON.x - 62,
+  y: SHARK_BUTTON.y - 20,
+  width: 124,
+  height: 40,
 };
 const SHARK_PANEL_SPOTLIGHT = {
   x: SITE_WIDTH - GUTTER - SHARK_PANEL_WIDTH,
@@ -477,8 +484,14 @@ export const FeedbackBoardScene: React.FC = () => {
         radius={16}
       />
       <Spotlight
+        label="Focus Shark AI button"
+        opacity={spotlightOpacity(frame, REACH_START + 10, SWAP + 12)}
+        rect={SHARK_BUTTON_SPOTLIGHT}
+        radius={999}
+      />
+      <Spotlight
         label="Focus Shark AI panel"
-        opacity={spotlightOpacity(frame, SWAP + 8, ROW_REACH_START - 18)}
+        opacity={spotlightOpacity(frame, SWAP + 24, ROW_REACH_START - 18)}
         rect={SHARK_PANEL_SPOTLIGHT}
         radius={18}
       />

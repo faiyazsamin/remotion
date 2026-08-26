@@ -5,13 +5,12 @@ import { AdminRail } from "./AdminRail";
 import {
   IconBook,
   IconCalendar,
-  IconChart,
-  IconChat,
   IconChevronDown,
   IconChip,
   IconClipboard,
   IconClose,
-  IconHome,
+  IconFeedbackRail,
+  IconHomeRail,
   IconMap,
   IconPencil,
   IconSearch,
@@ -20,7 +19,6 @@ import {
   IconStatusClosed,
   IconStatusDone,
   IconSurveys,
-  IconSwitchWorkspace,
   IconUploadInbox,
   IconUserPlus,
   IconUsers,
@@ -39,19 +37,18 @@ const GUTTER = ADMIN_GUTTER;
 const RAIL_WIDTH = scaled(46);
 
 const RAIL_ICONS = [
-  <IconHome key="home" />,
-  <IconUploadInbox key="upload" />,
-  <IconChat key="chat" />,
-  <IconMap key="map" />,
-  <IconCalendar key="calendar" />,
-  <IconBook key="book" />,
-  <IconClipboard key="clipboard" />,
+  <IconHomeRail key="home" />,
+  <IconUploadInbox key="support" />,
+  <IconFeedbackRail key="feedback" />,
+  <IconMap key="roadmap" />,
+  <IconCalendar key="changelog" />,
+  <IconBook key="help" />,
+  <IconClipboard key="surveys" />,
   <IconUsers key="users" />,
-  <IconUserPlus key="user-plus" />,
-  <IconSurveys key="surveys" />,
-  <IconChart key="chart" />,
+  <IconUserPlus key="team" />,
+  <IconSurveys key="integrations" />,
   <IconSettings key="settings" />,
-  <IconChip key="chip" />,
+  <IconChip key="agents" />,
 ];
 
 const TOP_BAR_HEIGHT = 78;
@@ -86,11 +83,20 @@ export const ChangelogDetail: React.FC<
   PartProps & {
     title: string;
     entries: ChangelogEntry[];
+    showNewBadge?: boolean;
     actionBarStyle?: React.CSSProperties;
     bodyStyle?: React.CSSProperties;
     entryStyle?: (index: number) => React.CSSProperties;
   }
-> = ({ style, title, entries, actionBarStyle, bodyStyle, entryStyle }) => (
+> = ({
+  style,
+  title,
+  entries,
+  showNewBadge = true,
+  actionBarStyle,
+  bodyStyle,
+  entryStyle,
+}) => (
   <Interactive.Div
     name="Changelog detail"
     style={{
@@ -109,7 +115,7 @@ export const ChangelogDetail: React.FC<
       icons={RAIL_ICONS}
       activeIndex={CHANGELOG_RAIL_ACTIVE}
       activeAccent={CHANGELOG_ACCENT}
-      footer={<IconSwitchWorkspace />}
+      showNewBadge={showNewBadge}
       style={{ background: "transparent" }}
     />
 

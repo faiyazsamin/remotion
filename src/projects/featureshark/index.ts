@@ -3,6 +3,13 @@ export {
   FeatureSharkChangelogSceneComposition,
 } from "./ChangelogScene";
 export {
+  FeatureSharkFullDemo,
+  FeatureSharkFullDemoComposition,
+  FEATURE_SHARK_DEMO_SCENES,
+  FEATURE_SHARK_DEMO_TIMELINE,
+  FEATURE_SHARK_FULL_DEMO_DURATION,
+} from "./FullDemoTimeline";
+export {
   FeatureSharkWidgetSupportSceneComposition,
   WidgetSupportScene,
 } from "./WidgetSupportScene";

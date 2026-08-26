@@ -10,15 +10,13 @@ import {
 import {
   IconBook,
   IconCalendar,
-  IconChart,
-  IconChat,
   IconChip,
   IconClipboard,
-  IconHome,
+  IconFeedbackRail,
+  IconHomeRail,
   IconMap,
   IconSettings,
   IconSurveys,
-  IconSwitchWorkspace,
   IconUploadInbox,
   IconUserPlus,
   IconUsers,
@@ -37,19 +35,18 @@ const RAIL_WIDTH = scaled(46);
 
 /** The rail is the same everywhere; Changelog is the fifth slot. */
 const RAIL_ICONS = [
-  <IconHome key="home" />,
-  <IconUploadInbox key="upload" />,
-  <IconChat key="chat" />,
-  <IconMap key="map" />,
-  <IconCalendar key="calendar" />,
-  <IconBook key="book" />,
-  <IconClipboard key="clipboard" />,
+  <IconHomeRail key="home" />,
+  <IconUploadInbox key="support" />,
+  <IconFeedbackRail key="feedback" />,
+  <IconMap key="roadmap" />,
+  <IconCalendar key="changelog" />,
+  <IconBook key="help" />,
+  <IconClipboard key="surveys" />,
   <IconUsers key="users" />,
-  <IconUserPlus key="user-plus" />,
-  <IconSurveys key="surveys" />,
-  <IconChart key="chart" />,
+  <IconUserPlus key="team" />,
+  <IconSurveys key="integrations" />,
   <IconSettings key="settings" />,
-  <IconChip key="chip" />,
+  <IconChip key="agents" />,
 ];
 
 export const CHANGELOG_RAIL_ACTIVE = 4;
@@ -72,10 +69,29 @@ export const visitSiteCentre = (frameWidth: number) => ({
 export const ChangelogBoard: React.FC<
   PartProps & {
     releases: Release[];
+    railPreviousActiveIndex?: number;
+    railPreviousAccent?: string;
+    railActiveProgress?: number;
+    railActiveIndicatorOpacity?: number;
+    showNewBadge?: boolean;
+    logoStyle?: React.CSSProperties;
     panelStyle?: React.CSSProperties;
     topBarStyle?: React.CSSProperties;
+    contentStyle?: React.CSSProperties;
   }
-> = ({ style, releases, panelStyle, topBarStyle }) => (
+> = ({
+  style,
+  releases,
+  railPreviousActiveIndex,
+  railPreviousAccent,
+  railActiveProgress,
+  railActiveIndicatorOpacity,
+  showNewBadge,
+  logoStyle,
+  panelStyle,
+  topBarStyle,
+  contentStyle,
+}) => (
   <Interactive.Div
     name="Changelog board"
     style={{
@@ -94,7 +110,12 @@ export const ChangelogBoard: React.FC<
       icons={RAIL_ICONS}
       activeIndex={CHANGELOG_RAIL_ACTIVE}
       activeAccent={CHANGELOG_ACCENT}
-      footer={<IconSwitchWorkspace />}
+      previousActiveIndex={railPreviousActiveIndex}
+      previousActiveAccent={railPreviousAccent}
+      activeProgress={railActiveProgress}
+      activeIndicatorOpacity={railActiveIndicatorOpacity}
+      showNewBadge={showNewBadge}
+      logoStyle={logoStyle}
       style={{ background: "transparent" }}
     />
 
@@ -110,6 +131,7 @@ export const ChangelogBoard: React.FC<
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        ...contentStyle,
       }}
     >
       <FeedbackBoardTopBar style={topBarStyle} />

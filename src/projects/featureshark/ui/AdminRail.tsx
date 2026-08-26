@@ -6,25 +6,58 @@ import {
   type PartProps,
 } from "./tokens";
 
+const ACTIVE_FALLBACK = "#7a6df2";
+const SLOT_SIZE = 30;
+const SLOT_GAP = 8;
+
+const hexToRgb = (hex: string) => {
+  const clean = hex.replace("#", "");
+  const full =
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((part) => part + part)
+          .join("")
+      : clean;
+
+  return {
+    r: Number.parseInt(full.slice(0, 2), 16),
+    g: Number.parseInt(full.slice(2, 4), 16),
+    b: Number.parseInt(full.slice(4, 6), 16),
+  };
+};
+
+const mixHex = (from: string, to: string, progress: number) => {
+  const start = hexToRgb(from);
+  const end = hexToRgb(to);
+  const mix = (a: number, b: number) => Math.round(a + (b - a) * progress);
+
+  return `rgb(${mix(start.r, end.r)}, ${mix(start.g, end.g)}, ${mix(
+    start.b,
+    end.b,
+  )})`;
+};
+
+const indicatorTop = (index: number) =>
+  scaled(8) +
+  scaled(29) +
+  scaled(SLOT_GAP) +
+  index * (scaled(SLOT_SIZE) + scaled(SLOT_GAP));
+
 /**
- * One rail slot. `active` is the page you are on, which reads as a lighter
- * pill; `accent` overrides the glyph colour for pages that tint their own icon.
+ * One rail slot. `active` is the page you are on, and follows the product rail:
+ * a solid rounded tile with a white glyph. `accent` is the page colour.
  */
 const iconWrap = (
   active = false,
-  accent?: string,
 ): React.CSSProperties => ({
-  width: scaled(28),
-  height: scaled(28),
+  width: scaled(SLOT_SIZE),
+  height: scaled(SLOT_SIZE),
   borderRadius: scaled(8),
-  border: active
-    ? `${scaled(1)}px solid rgba(255, 255, 255, 0.36)`
-    : `${scaled(1)}px solid transparent`,
-  backgroundColor: active ? "rgba(255, 255, 255, 0.18)" : "transparent",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  color: accent ?? (active ? "#ffffff" : "rgba(255, 255, 255, 0.74)"),
+  color: active ? "#ffffff" : "rgba(255, 255, 255, 0.74)",
   boxSizing: "border-box",
 });
 
@@ -39,9 +72,9 @@ export const railSlotCentre = (index: number) => ({
     ADMIN_GUTTER +
     scaled(8) +
     scaled(29) +
-    scaled(8) +
-    index * (scaled(28) + scaled(8)) +
-    scaled(28) / 2,
+    scaled(SLOT_GAP) +
+    index * (scaled(SLOT_SIZE) + scaled(SLOT_GAP)) +
+    scaled(SLOT_SIZE) / 2,
 });
 
 export type AdminRailProps = PartProps & {
@@ -51,8 +84,13 @@ export type AdminRailProps = PartProps & {
   activeIndex?: number;
   /** Colour override for the active glyph, when a page tints its own. */
   activeAccent?: string;
+  previousActiveIndex?: number;
+  previousActiveAccent?: string;
+  activeProgress?: number;
+  activeIndicatorOpacity?: number;
   /** Pinned to the bottom, below the flexible gap. */
   footer?: React.ReactNode;
+  showNewBadge?: boolean;
   logoStyle?: React.CSSProperties;
   iconStyle?: (index: number) => React.CSSProperties;
   footerStyle?: React.CSSProperties;
@@ -71,7 +109,12 @@ export const AdminRail: React.FC<AdminRailProps> = ({
   icons,
   activeIndex,
   activeAccent,
+  previousActiveIndex,
+  previousActiveAccent,
+  activeProgress = 1,
+  activeIndicatorOpacity = 1,
   footer,
+  showNewBadge = true,
   logoStyle,
   iconStyle,
   footerStyle,
@@ -87,9 +130,35 @@ export const AdminRail: React.FC<AdminRailProps> = ({
       paddingTop: scaled(8),
       boxSizing: "border-box",
       gap: scaled(8),
+      position: "relative",
       ...style,
     }}
   >
+    {activeIndex === undefined ? null : (
+      <div
+        style={{
+          position: "absolute",
+          left: (scaled(46) - scaled(SLOT_SIZE)) / 2,
+          top:
+            indicatorTop(previousActiveIndex ?? activeIndex) +
+            (indicatorTop(activeIndex) -
+              indicatorTop(previousActiveIndex ?? activeIndex)) *
+              activeProgress,
+          width: scaled(SLOT_SIZE),
+          height: scaled(SLOT_SIZE),
+          borderRadius: scaled(8),
+          backgroundColor: mixHex(
+            previousActiveAccent ?? activeAccent ?? ACTIVE_FALLBACK,
+            activeAccent ?? ACTIVE_FALLBACK,
+            activeProgress,
+          ),
+          opacity: activeIndicatorOpacity,
+          boxShadow: `0 ${scaled(5)}px ${scaled(12)}px rgba(18, 14, 75, 0.18)`,
+          zIndex: 0,
+        }}
+      />
+    )}
+
     <Interactive.Div
       name="Logo"
       style={{
@@ -101,6 +170,7 @@ export const AdminRail: React.FC<AdminRailProps> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        zIndex: 1,
         ...logoStyle,
       }}
     >
@@ -114,20 +184,52 @@ export const AdminRail: React.FC<AdminRailProps> = ({
       />
     </Interactive.Div>
 
-    {icons.map((icon, index) => (
-      <div
-        key={index}
-        style={{
-          ...iconWrap(
-            index === activeIndex,
-            index === activeIndex ? activeAccent : undefined,
-          ),
-          ...iconStyle?.(index),
-        }}
-      >
-        <div style={{ scale: ADMIN_SCALE, display: "flex" }}>{icon}</div>
-      </div>
-    ))}
+    {icons.map((icon, index) => {
+      const tileNearPrevious =
+        previousActiveIndex !== undefined && activeProgress < 0.48;
+      const highlighted =
+        (tileNearPrevious && index === previousActiveIndex) ||
+        (!tileNearPrevious && index === activeIndex);
+
+      return (
+        <div
+          key={index}
+          style={{
+            position: "relative",
+            zIndex: 1,
+            ...iconWrap(highlighted),
+            ...iconStyle?.(index),
+          }}
+        >
+          <div style={{ scale: ADMIN_SCALE, display: "flex" }}>{icon}</div>
+          {showNewBadge && index === icons.length - 1 ? (
+            <div
+              style={{
+                position: "absolute",
+                left: scaled(-4),
+                top: scaled(-8),
+                height: scaled(13),
+                minWidth: scaled(26),
+                padding: `0 ${scaled(4)}px`,
+                borderRadius: scaled(8),
+                backgroundColor: "#7f6df8",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: scaled(9),
+                fontWeight: 800,
+                lineHeight: 1,
+                letterSpacing: 0,
+                boxSizing: "border-box",
+              }}
+            >
+              New
+            </div>
+          ) : null}
+        </div>
+      );
+    })}
 
     {footer ? (
       <div

@@ -49,8 +49,8 @@ import {
   WidgetUpdatesView,
 } from "./ui";
 
-/** Long enough to read both pieces, and no longer. */
-const SCENE_LENGTH = 1740;
+/** Long enough to read both pieces, then breathe briefly after closing. */
+const SCENE_LENGTH = 1490;
 
 export const FeatureSharkWidgetSupportSceneComposition = () => (
   <Composition
@@ -155,7 +155,7 @@ const ARTICLE = ARTICLE_CLICK + 4;
 const EXPAND_LENGTH = 30;
 
 /** Beat 6 — read down it. */
-const ARTICLE_SCROLL_START = ARTICLE + 92;
+const ARTICLE_SCROLL_START = ARTICLE + 60;
 const ARTICLE_SCROLL_END = ARTICLE_SCROLL_START + 200;
 const ARTICLE_SCROLL = 1360;
 
@@ -177,7 +177,7 @@ const RELEASE_REACH_END = UPDATES + 106;
 const RELEASE_CLICK = UPDATES + 114;
 const RELEASE = RELEASE_CLICK + 4;
 
-const RELEASE_SCROLL_START = RELEASE + 92;
+const RELEASE_SCROLL_START = RELEASE + 60;
 const RELEASE_SCROLL_END = RELEASE_SCROLL_START + 90;
 /* The release is short — one screen of entries past the image, and no more. */
 const RELEASE_SCROLL = 160;
@@ -210,8 +210,6 @@ const EXPANDED_BACK = widgetBackCentre(SITE_WIDTH, { expanded: true });
 const PANEL_CLOSE = widgetCloseCentre(SITE_WIDTH, { expanded: true });
 
 const CURSOR_FROM = { x: SITE_WIDTH + 130, y: SITE_HEIGHT + 120 };
-/** Inside the reader, where a reader's pointer rests. */
-const READ_REST = { x: 1180, y: 470 };
 
 const CURSOR_TIMES = [
   TOGGLE_REACH_START,
@@ -224,16 +222,12 @@ const CURSOR_TIMES = [
   TOPIC_REACH_END,
   ARTICLE_REACH_START,
   ARTICLE_REACH_END,
-  ARTICLE + 12,
-  ARTICLE + 62,
   BACK_REACH_START,
   BACK_REACH_END,
   UPDATES_REACH_START,
   UPDATES_REACH_END,
   RELEASE_REACH_START,
   RELEASE_REACH_END,
-  RELEASE + 12,
-  RELEASE + 62,
   CLOSE_REACH_START,
   CLOSE_REACH_END,
 ];
@@ -249,16 +243,12 @@ const CURSOR_X = [
   TOPIC_ROW.x,
   ARTICLE_CARD.x,
   ARTICLE_CARD.x,
-  READ_REST.x,
-  READ_REST.x,
   EXPANDED_BACK.x,
   EXPANDED_BACK.x,
   TAB_UPDATES_POINT.x,
   TAB_UPDATES_POINT.x,
   UPDATE_CARD.x,
   UPDATE_CARD.x,
-  READ_REST.x,
-  READ_REST.x,
   PANEL_CLOSE.x,
 ];
 const CURSOR_Y = [
@@ -273,16 +263,12 @@ const CURSOR_Y = [
   TOPIC_ROW.y,
   ARTICLE_CARD.y,
   ARTICLE_CARD.y,
-  READ_REST.y,
-  READ_REST.y,
   EXPANDED_BACK.y,
   EXPANDED_BACK.y,
   TAB_UPDATES_POINT.y,
   TAB_UPDATES_POINT.y,
   UPDATE_CARD.y,
   UPDATE_CARD.y,
-  READ_REST.y,
-  READ_REST.y,
   PANEL_CLOSE.y,
 ];
 const CURSOR_EASINGS = CURSOR_TIMES.slice(1).map(() => EASE_OUT);

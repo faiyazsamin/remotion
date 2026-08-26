@@ -15,6 +15,8 @@ import {
   ARTICLE_VIEWS,
   ArticleWizard,
   ChangelogBoard,
+  CHANGELOG_ACCENT,
+  CHANGELOG_RAIL_ACTIVE,
   Cursor,
   FPS,
   HELP_RAIL_ACTIVE,
@@ -29,6 +31,7 @@ import {
   HelpArticleEditor,
   PUBLISH_ACTION,
   PublicHelpArticle,
+  MediaGalleryModal,
   railSlotCentre,
   RELEASE_ENTRIES,
   RELEASE_PUBLISH_DATE,
@@ -36,6 +39,7 @@ import {
   SITE_HEIGHT,
   SITE_WIDTH,
   ToastStack,
+  mediaTileCentre,
   wizardPrimaryCentre,
   wizardPrimaryRect,
   wizardPublishCentre,
@@ -48,7 +52,7 @@ import {
 } from "./ui/ArticleWizard";
 
 /** Long enough to hold on the published page, and no longer. */
-const SCENE_LENGTH = 2220;
+const SCENE_LENGTH = 1665;
 
 export const FeatureSharkHelpCenterSceneComposition = () => (
   <Composition
@@ -83,6 +87,18 @@ const pulse = (frame: number, at: number) =>
     extrapolateRight: "clamp",
     easing: EASE_OUT,
   });
+
+const routeContentIn = (progress: number): React.CSSProperties => ({
+  opacity: progress,
+  translate: `${(1 - progress) * 54}px 0px`,
+  filter: `blur(${(1 - progress) * 2.4}px)`,
+});
+
+const routeContentOut = (progress: number): React.CSSProperties => ({
+  opacity: 1 - progress * 0.42,
+  translate: `${progress * -34}px 0px`,
+  filter: `blur(${progress * 2}px)`,
+});
 
 const spotlightOpacity = (frame: number, start: number, end: number) =>
   interpolate(frame, [start, start + 12, end - 12, end], [0, 1, 1, 0], {
@@ -135,13 +151,24 @@ const WIZARD_LENGTH = 28;
 
 /** Beat 3 — the title is typed on the Info step. */
 const TITLE_START = WIZARD + 34;
-const TITLE_LENGTH = ARTICLE_TITLE.length * 3;
+const TITLE_LENGTH = Math.round(ARTICLE_TITLE.length * 1.55);
 const TITLE_END = TITLE_START + TITLE_LENGTH;
 
+const IMAGE_REACH_START = TITLE_END + 18;
+const IMAGE_REACH_END = TITLE_END + 52;
+const IMAGE_CLICK = TITLE_END + 60;
+const GALLERY = IMAGE_CLICK + 4;
+const GALLERY_LENGTH = 24;
+const TILE_REACH_START = GALLERY + 44;
+const TILE_REACH_END = GALLERY + 78;
+const TILE_CLICK = GALLERY + 86;
+const IMAGE_PICKED = TILE_CLICK + 4;
+const IMAGE_PICKED_LENGTH = 22;
+
 /** Beat 4 — on to the content step. */
-const CONTENT_REACH_START = TITLE_END + 46;
-const CONTENT_REACH_END = TITLE_END + 92;
-const CONTENT_CLICK = TITLE_END + 100;
+const CONTENT_REACH_START = IMAGE_PICKED + 22;
+const CONTENT_REACH_END = IMAGE_PICKED + 54;
+const CONTENT_CLICK = IMAGE_PICKED + 62;
 const CONTENT = CONTENT_CLICK + 4;
 const CONTENT_LENGTH = 22;
 
@@ -150,54 +177,55 @@ const BODY_CHARS = ARTICLE_BLOCKS.reduce(
   (total, block) => total + block.text.length + 1,
   0,
 );
-const BODY_START = CONTENT + 44;
-/** Nine characters a frame: fast enough to sit through, slow enough to read. */
-const BODY_LENGTH = Math.round(BODY_CHARS / 9);
+const BODY_START = CONTENT + 30;
+/** About 2.6 seconds: a fast generated draft, not manual typing. */
+const BODY_LENGTH = Math.round(FPS * 2.6);
 const BODY_END = BODY_START + BODY_LENGTH;
 /**
- * How far the editor has scrolled by the end. Tuned against the render so the
- * last line sits just above the footer, which is where the caret should be.
+ * Final editor scroll. Keep it below the document's absolute end so the last
+ * typed line lands near the lower edge of the write box, like a real editor
+ * tracking the caret.
  */
-const BODY_SCROLL = 1700;
+const BODY_SCROLL = 1500;
 
 /** Beat 6 — on to the SEO step. */
-const SEO_REACH_START = BODY_END + 50;
-const SEO_REACH_END = BODY_END + 96;
-const SEO_CLICK = BODY_END + 104;
+const SEO_REACH_START = BODY_END + 32;
+const SEO_REACH_END = BODY_END + 66;
+const SEO_CLICK = BODY_END + 74;
 const SEO = SEO_CLICK + 4;
 const SEO_LENGTH = 22;
 
 /** Beat 7 — Publish Now instead of a draft, which renames the action. */
-const PUBLISH_REACH_START = SEO + 66;
-const PUBLISH_REACH_END = SEO + 112;
-const PUBLISH_CLICK = SEO + 120;
+const PUBLISH_REACH_START = SEO + 34;
+const PUBLISH_REACH_END = SEO + 66;
+const PUBLISH_CLICK = SEO + 74;
 const PUBLISH_NOW_AT = PUBLISH_CLICK + 4;
 const PUBLISH_LENGTH = 20;
 
 /** Beat 8 — and the article goes out. */
-const CREATE_REACH_START = PUBLISH_NOW_AT + 74;
-const CREATE_REACH_END = PUBLISH_NOW_AT + 120;
-const CREATE_CLICK = PUBLISH_NOW_AT + 128;
+const CREATE_REACH_START = PUBLISH_NOW_AT + 34;
+const CREATE_REACH_END = PUBLISH_NOW_AT + 66;
+const CREATE_CLICK = PUBLISH_NOW_AT + 74;
 /** Publishing lands in the article's own editor, with the confirmation. */
 const EDITOR = CREATE_CLICK + 6;
 const EDITOR_LENGTH = 32;
 
 /** Beat 9 — Actions, which is where the public page lives. */
-const ACTIONS_REACH_START = EDITOR + 96;
-const ACTIONS_REACH_END = EDITOR + 142;
-const ACTIONS_CLICK = EDITOR + 150;
+const ACTIONS_REACH_START = EDITOR + 56;
+const ACTIONS_REACH_END = EDITOR + 90;
+const ACTIONS_CLICK = EDITOR + 98;
 const MENU = ACTIONS_CLICK + 4;
 const MENU_LENGTH = 16;
 
 /** Beat 10 — View Public Page. */
-const VIEW_REACH_START = MENU + 60;
-const VIEW_REACH_END = MENU + 104;
-const VIEW_CLICK = MENU + 112;
+const VIEW_REACH_START = MENU + 30;
+const VIEW_REACH_END = MENU + 62;
+const VIEW_CLICK = MENU + 70;
 const PUBLIC = VIEW_CLICK + 4;
 const PUBLIC_LENGTH = 34;
 
 /** Beat 11 — and read down it, all the way to the end of the article. */
-const SCROLL_START = PUBLIC + 110;
+const SCROLL_START = PUBLIC + 56;
 const SCROLL_END = SCROLL_START + 330;
 /**
  * The whole page less one screen, so the scroll ends on the article's last line
@@ -234,11 +262,23 @@ const CREATE_PUBLISH = wizardPrimaryCentre({ width: CREATE_PUBLISH_WIDTH });
 const PUBLISH_NOW = wizardPublishCentre(1);
 const ACTIONS_BUTTON = actionsCentre(SITE_WIDTH);
 const VIEW_PUBLIC = actionMenuItemCentre(0, SITE_WIDTH);
-const TITLE_FIELD_RECT = {
+const WIZARD_IMAGE_RECT = {
   x: WIZARD_LEFT + 30,
-  y: WIZARD_BODY_TOP + 54,
+  y: WIZARD_BODY_TOP + 300,
   width: WIZARD_WIDTH - 60,
-  height: 58,
+  height: 262,
+};
+const WIZARD_IMAGE = {
+  x: WIZARD_IMAGE_RECT.x + WIZARD_IMAGE_RECT.width / 2,
+  y: WIZARD_IMAGE_RECT.y + WIZARD_IMAGE_RECT.height / 2,
+};
+const MEDIA_TILE = mediaTileCentre(1);
+const MEDIA_TILE_SIZE = 347;
+const MEDIA_TILE_RECT = {
+  x: MEDIA_TILE.x - MEDIA_TILE_SIZE / 2,
+  y: MEDIA_TILE.y - MEDIA_TILE_SIZE / 2,
+  width: MEDIA_TILE_SIZE,
+  height: MEDIA_TILE_SIZE,
 };
 const PUBLISH_NOW_RECT = {
   x: WIZARD_LEFT + 30,
@@ -263,40 +303,29 @@ const HELPFUL_YES = {
 };
 
 const CURSOR_FROM = { x: -140, y: SITE_HEIGHT + 130 };
-/** Clear of the dialog's fields while the title types. */
-const TITLE_REST = { x: 1370, y: 950 };
-/** Inside the editor, where a writer's pointer would sit. */
-const BODY_REST = { x: 745, y: 290 };
-/** Over the article, clear of its chrome, while the editor settles. */
-const EDITOR_REST = { x: 780, y: 640 };
-/** Down the published page, out of the way of what is being read. */
-const PUBLIC_REST = { x: 830, y: 590 };
-
 const CURSOR_TIMES = [
   RAIL_REACH_START,
   RAIL_REACH_END,
   NEW_REACH_START,
   NEW_REACH_END,
-  WIZARD + 8,
-  WIZARD + 52,
+  IMAGE_REACH_START,
+  IMAGE_REACH_END,
+  GALLERY + 6,
+  GALLERY + 34,
+  TILE_REACH_START,
+  TILE_REACH_END,
   CONTENT_REACH_START,
   CONTENT_REACH_END,
-  CONTENT + 8,
-  CONTENT + 52,
   SEO_REACH_START,
   SEO_REACH_END,
   PUBLISH_REACH_START,
   PUBLISH_REACH_END,
   CREATE_REACH_START,
   CREATE_REACH_END,
-  EDITOR + 10,
-  EDITOR + 56,
   ACTIONS_REACH_START,
   ACTIONS_REACH_END,
   VIEW_REACH_START,
   VIEW_REACH_END,
-  PUBLIC + 10,
-  PUBLIC + 60,
   YES_REACH_START,
   YES_REACH_END,
 ];
@@ -306,26 +335,24 @@ const CURSOR_X = [
   RAIL_HELP.x,
   NEW_ARTICLE.x,
   NEW_ARTICLE.x,
-  TITLE_REST.x,
-  TITLE_REST.x,
+  WIZARD_IMAGE.x,
+  WIZARD_IMAGE.x,
+  MEDIA_TILE.x,
+  MEDIA_TILE.x,
+  MEDIA_TILE.x,
+  MEDIA_TILE.x,
   NEXT_CONTENT.x,
   NEXT_CONTENT.x,
-  BODY_REST.x,
-  BODY_REST.x,
   NEXT_SEO.x,
   NEXT_SEO.x,
   PUBLISH_NOW.x,
   PUBLISH_NOW.x,
   CREATE_PUBLISH.x,
   CREATE_PUBLISH.x,
-  EDITOR_REST.x,
-  EDITOR_REST.x,
   ACTIONS_BUTTON.x,
   ACTIONS_BUTTON.x,
   VIEW_PUBLIC.x,
   VIEW_PUBLIC.x,
-  PUBLIC_REST.x,
-  PUBLIC_REST.x,
   HELPFUL_YES.x,
 ];
 const CURSOR_Y = [
@@ -334,26 +361,24 @@ const CURSOR_Y = [
   RAIL_HELP.y,
   NEW_ARTICLE.y,
   NEW_ARTICLE.y,
-  TITLE_REST.y,
-  TITLE_REST.y,
+  WIZARD_IMAGE.y,
+  WIZARD_IMAGE.y,
+  MEDIA_TILE.y,
+  MEDIA_TILE.y,
+  MEDIA_TILE.y,
+  MEDIA_TILE.y,
   NEXT_CONTENT.y,
   NEXT_CONTENT.y,
-  BODY_REST.y,
-  BODY_REST.y,
   NEXT_SEO.y,
   NEXT_SEO.y,
   PUBLISH_NOW.y,
   PUBLISH_NOW.y,
   CREATE_PUBLISH.y,
   CREATE_PUBLISH.y,
-  EDITOR_REST.y,
-  EDITOR_REST.y,
   ACTIONS_BUTTON.y,
   ACTIONS_BUTTON.y,
   VIEW_PUBLIC.y,
   VIEW_PUBLIC.y,
-  PUBLIC_REST.y,
-  PUBLIC_REST.y,
   HELPFUL_YES.y,
 ];
 const CURSOR_EASINGS = CURSOR_TIMES.slice(1).map(() => EASE_OUT);
@@ -389,6 +414,11 @@ export const HelpCenterScene: React.FC = () => {
       extrapolateRight: "clamp",
     }),
   );
+  const hasImage = frame >= IMAGE_PICKED;
+  const imageChosen = arrive(frame, IMAGE_PICKED, IMAGE_PICKED + IMAGE_PICKED_LENGTH);
+  const imagePop = pulse(frame, IMAGE_PICKED + 6);
+  const gallery = arrive(frame, GALLERY, GALLERY + GALLERY_LENGTH);
+  const galleryOut = arrive(frame, IMAGE_PICKED, IMAGE_PICKED + IMAGE_PICKED_LENGTH);
 
   const bodyChars = Math.floor(
     interpolate(frame, [BODY_START, BODY_END], [0, BODY_CHARS], {
@@ -410,7 +440,7 @@ export const HelpCenterScene: React.FC = () => {
   const editor = arrive(frame, EDITOR, EDITOR + EDITOR_LENGTH);
   const onPublic = arrive(frame, PUBLIC, PUBLIC + PUBLIC_LENGTH);
   const newFocus = spotlightOpacity(frame, NEW_REACH_START + 4, NEW_CLICK + 16);
-  const titleFocus = spotlightOpacity(frame, TITLE_START, TITLE_END + 20);
+  const galleryTileFocus = spotlightOpacity(frame, TILE_REACH_START + 4, TILE_CLICK + 16);
   const publishFocus = spotlightOpacity(frame, PUBLISH_REACH_START + 4, PUBLISH_CLICK + 16);
   const createFocus = spotlightOpacity(frame, CREATE_REACH_START + 4, CREATE_CLICK + 16);
   const viewPublicFocus = spotlightOpacity(frame, VIEW_REACH_START + 4, VIEW_CLICK + 16);
@@ -431,7 +461,12 @@ export const HelpCenterScene: React.FC = () => {
       {/* The changelog list we are leaving, until Help Center covers it. */}
       {frame < HELP + HELP_LENGTH ? (
         <AbsoluteFill name="Changelog list">
-          <ChangelogBoard releases={RELEASES} />
+          <ChangelogBoard
+            releases={RELEASES}
+            panelStyle={routeContentOut(help)}
+            contentStyle={routeContentOut(help)}
+            railActiveIndicatorOpacity={1 - help}
+          />
         </AbsoluteFill>
       ) : null}
 
@@ -443,14 +478,18 @@ export const HelpCenterScene: React.FC = () => {
         <AbsoluteFill
           name="Help Center"
           style={{
-            opacity: help,
-            scale: interpolate(help, [0, 1], [1.015, 1]),
             /* Pushed out of focus behind the wizard rather than hidden. */
             filter: `blur(${wizard * 5}px)`,
           }}
         >
           <HelpCenterBoard
             emptyStyle={{ opacity: arrive(frame, HELP + 14, HELP + 44) }}
+            railPreviousActiveIndex={CHANGELOG_RAIL_ACTIVE}
+            railPreviousAccent={CHANGELOG_ACCENT}
+            railActiveProgress={help}
+            railActiveIndicatorOpacity={1}
+            panelStyle={routeContentIn(help)}
+            contentStyle={routeContentIn(help)}
             buttonStyle={{
               scale: press(frame, NEW_CLICK, 0.96) * (1 + newPop * 0.05),
               boxShadow: `0 ${14 + newPop * 8}px ${30 + newPop * 20}px rgba(92, 69, 223, ${
@@ -467,7 +506,17 @@ export const HelpCenterScene: React.FC = () => {
           title={ARTICLE_TITLE.slice(0, titleChars)}
           titleTyping={frame >= TITLE_START && frame < TITLE_END}
           topic={HELP_TOPIC}
+          hasImage={hasImage}
           imageBackground={MEDIA_PLACEHOLDERS[1]}
+          imageStyle={{
+            opacity: imageChosen,
+            scale:
+              interpolate(imageChosen, [0, 1], [0.985, 1]) *
+              (1 + imagePop * 0.018),
+            boxShadow: `0 ${10 * imageChosen}px ${30 * imageChosen}px rgba(14, 165, 233, ${
+              0.16 * imageChosen
+            })`,
+          }}
           blocks={ARTICLE_BLOCKS}
           revealed={bodyChars}
           contentScroll={bodyScroll}
@@ -513,6 +562,30 @@ export const HelpCenterScene: React.FC = () => {
               interpolate(wizard, [0, 1], [0.965, 1]) *
               interpolate(editor, [0, 1], [1, 1.02]),
           }}
+        />
+      ) : null}
+
+      {frame >= GALLERY && frame < IMAGE_PICKED + IMAGE_PICKED_LENGTH ? (
+        <MediaGalleryModal
+          scrimStyle={{ opacity: gallery - galleryOut }}
+          cardStyle={{
+            opacity: gallery - galleryOut,
+            scale:
+              interpolate(gallery, [0, 1], [0.965, 1]) *
+              interpolate(galleryOut, [0, 1], [1, 0.985]),
+          }}
+          tileStyle={(index) =>
+            index === 1
+              ? {
+                  scale:
+                    press(frame, TILE_CLICK, 0.97) *
+                    (1 + pulse(frame, TILE_REACH_END - 10) * 0.04),
+                  boxShadow: `0 ${10 * galleryTileFocus}px ${34 * galleryTileFocus}px rgba(14, 165, 233, ${
+                    0.25 * galleryTileFocus
+                  })`,
+                }
+              : {}
+          }
         />
       ) : null}
 
@@ -628,9 +701,9 @@ export const HelpCenterScene: React.FC = () => {
         }}
       />
       <Spotlight
-        label="Focus article title"
-        opacity={titleFocus}
-        rect={TITLE_FIELD_RECT}
+        label="Focus media gallery tile"
+        opacity={galleryTileFocus}
+        rect={MEDIA_TILE_RECT}
         radius={14}
       />
       <Spotlight
@@ -684,6 +757,8 @@ export const HelpCenterScene: React.FC = () => {
           scale:
             press(frame, RAIL_CLICK, 0.88) *
             press(frame, NEW_CLICK, 0.88) *
+            press(frame, IMAGE_CLICK, 0.88) *
+            press(frame, TILE_CLICK, 0.88) *
             press(frame, CONTENT_CLICK, 0.88) *
             press(frame, SEO_CLICK, 0.88) *
             press(frame, PUBLISH_CLICK, 0.88) *

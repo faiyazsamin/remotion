@@ -20,6 +20,7 @@ import {
   DARK_MODE_TITLE,
   DETAIL_PANEL_WIDTH,
   detailHeaderCentre,
+  BOARD_RAIL_ACTIVE,
   FeedbackBoard,
   FeedbackDetailPanel,
   FILTER_PANEL_WIDTH,
@@ -91,6 +92,18 @@ const spotlightOpacity = (frame: number, start: number, end: number) =>
     extrapolateRight: "clamp",
     easing: EASE_OUT,
   });
+
+const routeContentIn = (progress: number): React.CSSProperties => ({
+  opacity: progress,
+  translate: `${(1 - progress) * 54}px 0px`,
+  filter: `blur(${(1 - progress) * 2.4}px)`,
+});
+
+const routeContentOut = (progress: number): React.CSSProperties => ({
+  opacity: 1 - progress * 0.42,
+  translate: `${progress * -34}px 0px`,
+  filter: `blur(${progress * 2}px)`,
+});
 
 const Spotlight: React.FC<{
   label: string;
@@ -247,6 +260,12 @@ const ROADMAP_TOGGLE = ROADMAP + 20;
 const ROADMAP_STAGE_STAGGER = 7;
 const ROADMAP_CARD = ROADMAP + 60;
 const ROADMAP_CARD_FOCUS = ROADMAP_CARD + 22;
+const ROADMAP_CARD_FOCUS_END = ROADMAP_CARD_FOCUS + 56;
+
+/** Final handoff — return to Feedback before the bulk-work scene takes over. */
+const FEEDBACK_RETURN_REACH_START = ROADMAP_CARD_FOCUS_END + 28;
+const FEEDBACK_RETURN_REACH_END = FEEDBACK_RETURN_REACH_START + 40;
+const FEEDBACK_RETURN_CLICK = FEEDBACK_RETURN_REACH_END + 8;
 
 /** The public page's own parts settle once it is up. */
 const PREVIEW_NAV = PREVIEW + 8;
@@ -327,6 +346,7 @@ const SHARK = (() => {
 
   return { x: centre.x + 46, y: centre.y };
 })();
+const SHARK_BUTTON = sharkCentre();
 
 const RAIL_ROADMAP = railSlot(ROADMAP_RAIL_ACTIVE);
 
@@ -361,6 +381,12 @@ const PREVIEW_COMPOSER_RECT = {
 const ADMIN_COMPOSER_CLICK_TARGET = {
   x: PREVIEW_COMPOSER_RECT.x + PREVIEW_COMPOSER_RECT.width - 78,
   y: PREVIEW_COMPOSER_RECT.y + 36,
+};
+const SHARK_BUTTON_SPOTLIGHT = {
+  x: SHARK_BUTTON.x - 62,
+  y: SHARK_BUTTON.y - 20,
+  width: 124,
+  height: 40,
 };
 const SHARK_PANEL_SPOTLIGHT = {
   x: SITE_WIDTH - GUTTER - SHARK_PANEL_WIDTH,
@@ -429,6 +455,8 @@ const CURSOR_TIMES = [
   ROADMAP_REACH_END,
   ROADMAP + 10,
   ROADMAP + 60,
+  FEEDBACK_RETURN_REACH_START,
+  FEEDBACK_RETURN_REACH_END,
 ];
 const CURSOR_X = [
   CURSOR_FROM.x,
@@ -457,6 +485,8 @@ const CURSOR_X = [
   RAIL_ROADMAP.x,
   RAIL_ROADMAP.x,
   ROADMAP_REST.x,
+  ROADMAP_REST.x,
+  RAIL_FEEDBACK.x,
 ];
 const CURSOR_Y = [
   CURSOR_FROM.y,
@@ -485,6 +515,8 @@ const CURSOR_Y = [
   RAIL_ROADMAP.y,
   RAIL_ROADMAP.y,
   ROADMAP_REST.y,
+  ROADMAP_REST.y,
+  RAIL_FEEDBACK.y,
 ];
 const CURSOR_EASINGS = CURSOR_TIMES.slice(1).map(() => EASE_OUT);
 
@@ -534,15 +566,25 @@ export const FeedbackReviewScene: React.FC = () => {
         })
       : 1;
   const adminPostBurst = pop(frame, ADMIN_POSTED);
-  const sharkFocus = spotlightOpacity(frame, SHARK_REACH_START + 4, ROADMAP_REACH_START - 10);
+  const sharkButtonFocus = spotlightOpacity(frame, SHARK_REACH_START + 4, SWAP + 12);
+  const sharkPanelFocus = spotlightOpacity(frame, SWAP + 24, ROADMAP_REACH_START - 12);
   const roadmapCardAppear = arrive(frame, ROADMAP_CARD, ROADMAP_CARD_FOCUS);
-  const roadmapPayoff = arrive(frame, ROADMAP_CARD_FOCUS, ROADMAP_CARD_FOCUS + 14);
+  const roadmapPayoff = spotlightOpacity(
+    frame,
+    ROADMAP_CARD_FOCUS,
+    ROADMAP_CARD_FOCUS_END,
+  );
   const roadmapCardZoom =
     frame >= ROADMAP_CARD_FOCUS
       ? interpolate(
           frame,
-          [ROADMAP_CARD_FOCUS, ROADMAP_CARD_FOCUS + 14, ROADMAP_CARD_FOCUS + 46],
-          [1, 1.16, 1.08],
+          [
+            ROADMAP_CARD_FOCUS,
+            ROADMAP_CARD_FOCUS + 14,
+            ROADMAP_CARD_FOCUS + 46,
+            ROADMAP_CARD_FOCUS_END,
+          ],
+          [1, 1.16, 1.08, 1],
           {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
@@ -554,8 +596,13 @@ export const FeedbackReviewScene: React.FC = () => {
     frame >= ROADMAP_CARD_FOCUS
       ? interpolate(
           frame,
-          [ROADMAP_CARD_FOCUS, ROADMAP_CARD_FOCUS + 14, ROADMAP_CARD_FOCUS + 46],
-          [0, -8, 0],
+          [
+            ROADMAP_CARD_FOCUS,
+            ROADMAP_CARD_FOCUS + 14,
+            ROADMAP_CARD_FOCUS + 46,
+            ROADMAP_CARD_FOCUS_END,
+          ],
+          [0, -8, 0, 0],
           {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
@@ -711,10 +758,10 @@ export const FeedbackReviewScene: React.FC = () => {
         // Recedes very slightly as the preview comes forward over it.
         style={{
           scale: 1 - preview * (1 - back) * 0.01,
-          // Leaves to the left as the roadmap takes over, the way the pages
-          // before it did.
-          translate: `${roadmap * -3}% 0px`,
         }}
+        panelStyle={routeContentOut(roadmap)}
+        contentStyle={routeContentOut(roadmap)}
+        railActiveIndicatorOpacity={1 - roadmap}
         rows={rows}
         counts={countsFor(rows)}
         // The pane closes as we head back to the list.
@@ -739,12 +786,12 @@ export const FeedbackReviewScene: React.FC = () => {
           backgroundColor:
             frame >= SHARK_CLICK - 4 && frame <= SHARK_CLICK + 7
               ? "#f4f1fe"
-              : sharkFocus
+              : sharkButtonFocus
                 ? "#faf8ff"
                 : "#ffffff",
-          boxShadow: sharkFocus
-            ? `0 0 ${22 * sharkFocus}px rgba(92, 69, 223, ${
-                0.2 * sharkFocus
+          boxShadow: sharkButtonFocus
+            ? `0 0 ${22 * sharkButtonFocus}px rgba(92, 69, 223, ${
+                0.2 * sharkButtonFocus
               })`
             : undefined,
         }}
@@ -881,30 +928,14 @@ export const FeedbackReviewScene: React.FC = () => {
         rail, so the only visible change is the highlight moving down a slot.
       */}
       {frame >= ROADMAP ? (
-        <AbsoluteFill
-          name="Roadmap"
-          style={{
-            opacity: arrive(frame, ROADMAP, ROADMAP + 18),
-            scale: interpolate(
-              frame,
-              [ROADMAP, ROADMAP + ROADMAP_LENGTH],
-              [1.015, 1],
-              {
-                extrapolateLeft: "clamp",
-                extrapolateRight: "clamp",
-                easing: EASE_OUT,
-              },
-            ),
-          }}
-        >
+        <AbsoluteFill name="Roadmap">
           <RoadmapBoard
             stages={stages}
-            panelStyle={{
-              opacity: arrive(frame, ROADMAP_PANEL, ROADMAP_PANEL + 20),
-            }}
-            topBarStyle={{
-              opacity: arrive(frame, ROADMAP_PANEL, ROADMAP_PANEL + 20),
-            }}
+            railPreviousActiveIndex={BOARD_RAIL_ACTIVE}
+            railPreviousAccent="#2fb47c"
+            railActiveProgress={roadmap}
+            panelStyle={routeContentIn(roadmap)}
+            contentStyle={routeContentIn(roadmap)}
             toggleStyle={{
               opacity: arrive(frame, ROADMAP_TOGGLE, ROADMAP_TOGGLE + 20),
             }}
@@ -941,14 +972,24 @@ export const FeedbackReviewScene: React.FC = () => {
         }}
       />
       <Spotlight
+        label="Focus Shark AI button"
+        opacity={sharkButtonFocus}
+        rect={SHARK_BUTTON_SPOTLIGHT}
+        radius={999}
+      />
+      <Spotlight
         label="Focus Shark AI panel"
-        opacity={spotlightOpacity(frame, SWAP + 8, ROADMAP_REACH_START - 12)}
+        opacity={sharkPanelFocus}
         rect={SHARK_PANEL_SPOTLIGHT}
         radius={18}
       />
       <Spotlight
         label="Focus roadmap planned card"
-        opacity={roadmapPayoff}
+        opacity={spotlightOpacity(
+          frame,
+          ROADMAP_CARD_FOCUS,
+          ROADMAP_CARD_FOCUS_END,
+        )}
         rect={PLANNED_CARD_SPOTLIGHT}
         radius={16}
         style={{
@@ -956,7 +997,6 @@ export const FeedbackReviewScene: React.FC = () => {
           scale: roadmapCardZoom,
         }}
       />
-
       <Cursor
         x={interpolate(frame, CURSOR_TIMES, CURSOR_X, {
           extrapolateLeft: "clamp",
@@ -983,7 +1023,8 @@ export const FeedbackReviewScene: React.FC = () => {
             press(frame, ADMIN_SUBMIT_CLICK, 0.88) *
             press(frame, BACK_CLICK, 0.88) *
             press(frame, SHARK_CLICK, 0.88) *
-            press(frame, ROADMAP_CLICK, 0.88),
+            press(frame, ROADMAP_CLICK, 0.88) *
+            press(frame, FEEDBACK_RETURN_CLICK, 0.88),
         }}
       />
     </AbsoluteFill>

@@ -8,20 +8,18 @@ import { HELP_ACCENT, HELP_LOCALE, HELP_TOPIC } from "./helpCenterContent";
 import {
   IconBook,
   IconCalendar,
-  IconChart,
-  IconChat,
   IconChevronDown,
   IconClock,
   IconChip,
   IconClipboard,
   IconEllipsis,
+  IconFeedbackRail,
   IconHelpCircle,
-  IconHome,
+  IconHomeRail,
   IconMap,
   IconPlus,
   IconSettings,
   IconSurveys,
-  IconSwitchWorkspace,
   IconUploadInbox,
   IconUserPlus,
   IconUsers,
@@ -42,19 +40,18 @@ const PANEL_WIDTH = 350;
 
 /** The rail is the same everywhere; Help Center is the sixth slot. */
 const RAIL_ICONS = [
-  <IconHome key="home" />,
-  <IconUploadInbox key="upload" />,
-  <IconChat key="chat" />,
-  <IconMap key="map" />,
-  <IconCalendar key="calendar" />,
-  <IconBook key="book" />,
-  <IconClipboard key="clipboard" />,
+  <IconHomeRail key="home" />,
+  <IconUploadInbox key="support" />,
+  <IconFeedbackRail key="feedback" />,
+  <IconMap key="roadmap" />,
+  <IconCalendar key="changelog" />,
+  <IconBook key="help" />,
+  <IconClipboard key="surveys" />,
   <IconUsers key="users" />,
-  <IconUserPlus key="user-plus" />,
-  <IconSurveys key="surveys" />,
-  <IconChart key="chart" />,
+  <IconUserPlus key="team" />,
+  <IconSurveys key="integrations" />,
   <IconSettings key="settings" />,
-  <IconChip key="chip" />,
+  <IconChip key="agents" />,
 ];
 
 export const HELP_RAIL_ACTIVE = 5;
@@ -150,9 +147,24 @@ export const HelpCenterBoard: React.FC<
   PartProps & {
     emptyStyle?: React.CSSProperties;
     buttonStyle?: React.CSSProperties;
+    railPreviousActiveIndex?: number;
+    railPreviousAccent?: string;
+    railActiveProgress?: number;
+    railActiveIndicatorOpacity?: number;
     panelStyle?: React.CSSProperties;
+    contentStyle?: React.CSSProperties;
   }
-> = ({ style, emptyStyle, buttonStyle, panelStyle }) => (
+> = ({
+  style,
+  emptyStyle,
+  buttonStyle,
+  railPreviousActiveIndex,
+  railPreviousAccent,
+  railActiveProgress,
+  railActiveIndicatorOpacity,
+  panelStyle,
+  contentStyle,
+}) => (
   <Interactive.Div
     name="Help Center board"
     style={{
@@ -171,7 +183,10 @@ export const HelpCenterBoard: React.FC<
       icons={RAIL_ICONS}
       activeIndex={HELP_RAIL_ACTIVE}
       activeAccent={HELP_ACCENT}
-      footer={<IconSwitchWorkspace />}
+      previousActiveIndex={railPreviousActiveIndex}
+      previousActiveAccent={railPreviousAccent}
+      activeProgress={railActiveProgress}
+      activeIndicatorOpacity={railActiveIndicatorOpacity}
       style={{ background: "transparent" }}
     />
 
@@ -334,6 +349,7 @@ export const HelpCenterBoard: React.FC<
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        ...contentStyle,
       }}
     >
       <FeedbackBoardTopBar />

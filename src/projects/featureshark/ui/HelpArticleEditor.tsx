@@ -17,7 +17,6 @@ import {
   IconStatusClosed,
   IconStatusDone,
   IconSettings,
-  IconSwitchWorkspace,
   IconTrash,
 } from "./icons";
 import {
@@ -116,7 +115,6 @@ export const HelpArticleEditor: React.FC<
       icons={HELP_RAIL_ICONS}
       activeIndex={HELP_RAIL_ACTIVE}
       activeAccent={HELP_ACCENT}
-      footer={<IconSwitchWorkspace />}
       style={{ background: "transparent" }}
     />
 

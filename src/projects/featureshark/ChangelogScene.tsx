@@ -7,6 +7,7 @@ import {
 } from "remotion";
 import {
   CHANGELOG_MAIN_LEFT,
+  CHANGELOG_ACCENT,
   CHANGELOG_RAIL_ACTIVE,
   CHANGELOG_TABLE_TOP,
   ChangelogBoard,
@@ -18,6 +19,7 @@ import {
   configDayCentre,
   configImageCentre,
   ConfigModal,
+  BOARD_RAIL_ACTIVE,
   configStatusCentre,
   configStatusOptionCentre,
   configurationCentre,
@@ -27,6 +29,7 @@ import {
   FeedbackBoard,
   FPS,
   INTEGRATIONS_ROW,
+  INTEGRATIONS_TITLE,
   MEDIA_PLACEHOLDERS,
   PublicChangelogPost,
   MediaGalleryModal,
@@ -41,10 +44,12 @@ import {
   RELEASE_TITLE,
   releaseTitleCentre,
   visitSiteCentre,
+  SharkAiPanel,
   SITE_HEIGHT,
   SITE_WIDTH,
   saveCentre,
   ToastStack,
+  type AgentRun,
   type FeedbackRow,
   type Release,
 } from "./ui";
@@ -54,7 +59,7 @@ export const FeatureSharkChangelogSceneComposition = () => (
   <Composition
     id="FeatureSharkChangelogScene"
     component={ChangelogScene}
-    durationInFrames={1920}
+    durationInFrames={1284}
     fps={FPS}
     width={SITE_WIDTH}
     height={SITE_HEIGHT}
@@ -91,6 +96,18 @@ const spotlightOpacity = (frame: number, start: number, end: number) =>
     easing: EASE_OUT,
   });
 
+const routeContentIn = (progress: number): React.CSSProperties => ({
+  opacity: progress,
+  translate: `${(1 - progress) * 54}px 0px`,
+  filter: `blur(${(1 - progress) * 2.4}px)`,
+});
+
+const routeContentOut = (progress: number): React.CSSProperties => ({
+  opacity: 1 - progress * 0.42,
+  translate: `${progress * -34}px 0px`,
+  filter: `blur(${progress * 2}px)`,
+});
+
 const Spotlight: React.FC<{
   label: string;
   opacity: number;
@@ -118,11 +135,11 @@ const Spotlight: React.FC<{
   ) : null;
 
 /** Beat 1 — the rail takes us from the feedback board to the changelog. */
-const RAIL_REACH_START = 44;
-const RAIL_REACH_END = 92;
-const RAIL_CLICK = 100;
+const RAIL_REACH_START = 0;
+const RAIL_REACH_END = 6;
+const RAIL_CLICK = 14;
 const NAV = RAIL_CLICK + 4;
-const NAV_LENGTH = 36;
+const NAV_LENGTH = 12;
 const LIST = NAV + NAV_LENGTH;
 
 /** Beat 2 — the drafted release is opened. */
@@ -140,69 +157,69 @@ const MODAL = CONFIG_CLICK + 4;
 const MODAL_LENGTH = 26;
 
 /** Beat 4 — the featured slot opens the media gallery. */
-const IMAGE_REACH_START = 520;
-const IMAGE_REACH_END = 566;
-const IMAGE_CLICK = 574;
+const IMAGE_REACH_START = MODAL + 18;
+const IMAGE_REACH_END = MODAL + 76;
+const IMAGE_CLICK = MODAL + 84;
 const GALLERY = IMAGE_CLICK + 4;
 const GALLERY_LENGTH = 26;
 
 /** Beat 5 — a tile is picked, which fills the slot and closes the gallery. */
-const TILE_REACH_START = GALLERY + 66;
-const TILE_REACH_END = GALLERY + 112;
-const TILE_CLICK = GALLERY + 120;
+const TILE_REACH_START = GALLERY + 44;
+const TILE_REACH_END = GALLERY + 78;
+const TILE_CLICK = GALLERY + 86;
 const PICKED = TILE_CLICK + 4;
 const PICKED_LENGTH = 24;
 
 /** Beat 6 — the status field opens its dropdown. */
-const STATUS_REACH_START = PICKED + 66;
-const STATUS_REACH_END = PICKED + 112;
-const STATUS_CLICK = PICKED + 120;
+const STATUS_REACH_START = PICKED + 34;
+const STATUS_REACH_END = PICKED + 70;
+const STATUS_CLICK = PICKED + 78;
 const STATUS_MENU = STATUS_CLICK + 4;
 const STATUS_MENU_LENGTH = 18;
 
 /** Beat 7 — Published is chosen, which reveals the Publish Date field. */
-const PUBLISHED_REACH_START = STATUS_MENU + 62;
-const PUBLISHED_REACH_END = STATUS_MENU + 106;
-const PUBLISHED_CLICK = STATUS_MENU + 114;
+const PUBLISHED_REACH_START = STATUS_MENU + 28;
+const PUBLISHED_REACH_END = STATUS_MENU + 60;
+const PUBLISHED_CLICK = STATUS_MENU + 68;
 const PUBLISHED = PUBLISHED_CLICK + 4;
 const PUBLISHED_LENGTH = 26;
 
 /** Beat 8 — the date field opens the picker. */
-const DATE_REACH_START = PUBLISHED + 70;
-const DATE_REACH_END = PUBLISHED + 116;
-const DATE_CLICK = PUBLISHED + 124;
+const DATE_REACH_START = PUBLISHED + 28;
+const DATE_REACH_END = PUBLISHED + 60;
+const DATE_CLICK = PUBLISHED + 68;
 const CALENDAR = DATE_CLICK + 4;
 const CALENDAR_LENGTH = 18;
 
 /** Beat 9 — a day is picked. */
-const DAY_REACH_START = CALENDAR + 62;
-const DAY_REACH_END = CALENDAR + 106;
-const DAY_CLICK = CALENDAR + 114;
+const DAY_REACH_START = CALENDAR + 30;
+const DAY_REACH_END = CALENDAR + 62;
+const DAY_CLICK = CALENDAR + 70;
 const DATE_SET = DAY_CLICK + 4;
 
 /** Beat 10 — the dialog is dismissed and the release saved. */
-const CLOSE_REACH_START = DATE_SET + 66;
-const CLOSE_REACH_END = DATE_SET + 112;
-const CLOSE_CLICK = DATE_SET + 120;
+const CLOSE_REACH_START = DATE_SET + 34;
+const CLOSE_REACH_END = DATE_SET + 66;
+const CLOSE_CLICK = DATE_SET + 74;
 const CLOSED = CLOSE_CLICK + 4;
 const CLOSE_LENGTH = 20;
 
-const SAVE_REACH_START = CLOSED + 66;
-const SAVE_REACH_END = CLOSED + 112;
-const SAVE_CLICK = CLOSED + 120;
+const SAVE_REACH_START = CLOSED + 30;
+const SAVE_REACH_END = CLOSED + 62;
+const SAVE_CLICK = CLOSED + 70;
 /** Saving closes the editor and puts us back on the list, now published. */
 const SAVED = SAVE_CLICK + 4;
 const SAVED_LENGTH = 30;
 
 /** Beat 11 — visit the public site. */
-const VISIT_REACH_START = SAVED + 82;
-const VISIT_REACH_END = SAVED + 128;
-const VISIT_CLICK = SAVED + 136;
+const VISIT_REACH_START = SAVED + 52;
+const VISIT_REACH_END = SAVED + 86;
+const VISIT_CLICK = SAVED + 94;
 const PUBLIC = VISIT_CLICK + 4;
 const PUBLIC_LENGTH = 34;
 
 /** Beat 12 — scroll down the published post. */
-const SCROLL_START = PUBLIC + 118;
+const SCROLL_START = PUBLIC + 56;
 const SCROLL_END = SCROLL_START + 110;
 const SCROLL_DISTANCE = 372;
 
@@ -217,6 +234,43 @@ const PUBLISH_DATE = "Jun 28, 2026";
 const BOARD_ROWS: FeedbackRow[] = [
   { ...DARK_MODE_ROW, status: "Completed", time: "6 hours ago" },
   { ...INTEGRATIONS_ROW, status: "Completed", time: "8 hours ago" },
+];
+
+const PREVIOUS_AGENT_RUNS: AgentRun[] = [
+  {
+    agent: "Changelog Writer",
+    subject: "Dark Mode Support",
+    time: "12 minutes ago",
+    items: [
+      {
+        label: "used CreateChangelogDraft 'Dark Mode Support'",
+        time: "12 minutes ago",
+        done: true,
+      },
+      {
+        label: "Agent 'Changelog Writer' was prompted by Article Writer",
+        time: "12 minutes ago",
+        done: true,
+      },
+    ],
+  },
+  {
+    agent: "Changelog Writer",
+    subject: INTEGRATIONS_TITLE,
+    time: "12 minutes ago",
+    items: [
+      {
+        label: `used SearchFeedback '${INTEGRATIONS_TITLE}'`,
+        time: "12 minutes ago",
+        done: true,
+      },
+      {
+        label: "generated changelog content",
+        time: "12 minutes ago",
+        done: true,
+      },
+    ],
+  },
 ];
 
 /** One release, still a draft: the entries the agent generated. */
@@ -292,16 +346,9 @@ const MEDIA_TILE_RECT = {
   width: MEDIA_TILE_SIZE,
   height: MEDIA_TILE_SIZE,
 };
-const CURSOR_FROM = { x: -140, y: SITE_HEIGHT + 130 };
+const CURSOR_FROM = { x: RAIL_CHANGELOG.x, y: RAIL_CHANGELOG.y };
 /** Clear of the editor once the release is open. */
 const DETAIL_REST = { x: 570, y: 190 };
-/** Off to the side once the dialog is up, not over its fields. */
-const MODAL_REST = { x: 1500, y: 220 };
-/** Inside the gallery but off the tiles, while it settles. */
-const GALLERY_REST = { x: 1420, y: 300 };
-/** Left of the post's body, out of the way while the page scrolls. */
-const PUBLIC_REST = { x: 490, y: 850 };
-
 const CURSOR_TIMES = [
   RAIL_REACH_START,
   RAIL_REACH_END,
@@ -311,8 +358,6 @@ const CURSOR_TIMES = [
   DETAIL + 52,
   CONFIG_REACH_START,
   CONFIG_REACH_END,
-  MODAL + 6,
-  MODAL + 46,
   IMAGE_REACH_START,
   IMAGE_REACH_END,
   GALLERY + 6,
@@ -333,8 +378,6 @@ const CURSOR_TIMES = [
   SAVE_REACH_END,
   VISIT_REACH_START,
   VISIT_REACH_END,
-  PUBLIC + 10,
-  PUBLIC + 54,
 ];
 const CURSOR_X = [
   CURSOR_FROM.x,
@@ -346,12 +389,10 @@ const CURSOR_X = [
   DETAIL_REST.x,
   CONFIG_BUTTON.x,
   CONFIG_BUTTON.x,
-  MODAL_REST.x,
-  MODAL_REST.x,
   EMPTY_IMAGE.x,
   EMPTY_IMAGE.x,
-  GALLERY_REST.x,
-  GALLERY_REST.x,
+  MEDIA_TILE.x,
+  MEDIA_TILE.x,
   MEDIA_TILE.x,
   MEDIA_TILE.x,
   STATUS_FIELD.x,
@@ -367,8 +408,6 @@ const CURSOR_X = [
   SAVE_BUTTON.x,
   SAVE_BUTTON.x,
   VISIT_BUTTON.x,
-  VISIT_BUTTON.x,
-  PUBLIC_REST.x,
 ];
 const CURSOR_Y = [
   CURSOR_FROM.y,
@@ -380,12 +419,10 @@ const CURSOR_Y = [
   DETAIL_REST.y,
   CONFIG_BUTTON.y,
   CONFIG_BUTTON.y,
-  MODAL_REST.y,
-  MODAL_REST.y,
   EMPTY_IMAGE.y,
   EMPTY_IMAGE.y,
-  GALLERY_REST.y,
-  GALLERY_REST.y,
+  MEDIA_TILE.y,
+  MEDIA_TILE.y,
   MEDIA_TILE.y,
   MEDIA_TILE.y,
   STATUS_FIELD.y,
@@ -401,8 +438,6 @@ const CURSOR_Y = [
   SAVE_BUTTON.y,
   SAVE_BUTTON.y,
   VISIT_BUTTON.y,
-  VISIT_BUTTON.y,
-  PUBLIC_REST.y,
 ];
 const CURSOR_EASINGS = CURSOR_TIMES.slice(1).map(() => EASE_OUT);
 
@@ -469,7 +504,22 @@ export const ChangelogScene: React.FC = () => {
       {/* The board we are leaving, still there until the list covers it. */}
       {frame < LIST ? (
         <AbsoluteFill name="Feedback board">
-          <FeedbackBoard rows={BOARD_ROWS} counts={countsFor(BOARD_ROWS)} />
+          <FeedbackBoard
+            rows={BOARD_ROWS}
+            counts={countsFor(BOARD_ROWS)}
+            panelStyle={routeContentOut(nav)}
+            contentStyle={routeContentOut(nav)}
+            railActiveIndicatorOpacity={1 - nav}
+            filterCollapse={1}
+            sharkOpen={1}
+            sharkPanel={
+              <SharkAiPanel
+                runs={PREVIOUS_AGENT_RUNS}
+                loadMore
+                style={{ opacity: 1 }}
+              />
+            }
+          />
         </AbsoluteFill>
       ) : null}
 
@@ -478,18 +528,26 @@ export const ChangelogScene: React.FC = () => {
         same place, so the only visible change is the highlight moving one slot.
       */}
       {(frame >= NAV && frame < DETAIL) || frame >= SAVED ? (
-        <AbsoluteFill
-          name="Changelog list"
-          style={{
-            opacity: frame >= SAVED ? saved : nav,
-            scale: interpolate(frame, [NAV, NAV + NAV_LENGTH], [1.015, 1], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-              easing: EASE_OUT,
-            }),
-          }}
-        >
-          <ChangelogBoard releases={releases} />
+        <AbsoluteFill name="Changelog list">
+          <ChangelogBoard
+            releases={releases}
+            railPreviousActiveIndex={
+              frame >= SAVED ? CHANGELOG_RAIL_ACTIVE : BOARD_RAIL_ACTIVE
+            }
+            railPreviousAccent={
+              frame >= SAVED ? CHANGELOG_ACCENT : "#2fb47c"
+            }
+            railActiveProgress={frame >= SAVED ? 1 : nav}
+            railActiveIndicatorOpacity={frame >= SAVED ? saved : 1}
+            showNewBadge={frame < PUBLIC}
+            logoStyle={{ opacity: frame < PUBLIC ? 1 : 0 }}
+            panelStyle={
+              frame >= SAVED ? routeContentIn(saved) : routeContentIn(nav)
+            }
+            contentStyle={
+              frame >= SAVED ? routeContentIn(saved) : routeContentIn(nav)
+            }
+          />
         </AbsoluteFill>
       ) : null}
 

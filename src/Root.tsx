@@ -7,17 +7,17 @@ import {
   FeatureSharkFeedbackBoardSceneComposition,
   FeatureSharkFeedbackReviewSceneComposition,
   FeatureSharkFeedbackWidgetSceneComposition,
+  FeatureSharkFullDemoComposition,
   FeatureSharkHelpCenterSceneComposition,
   FeatureSharkPublicBoardScenePart2Composition,
   FeatureSharkWidgetSupportSceneComposition,
 } from "./projects/featureshark";
 
-/** Registered in story order, which is the order the film cuts them. */
+/** Master timeline first; individual scenes remain registered for isolated edits. */
 export const RemotionRoot: React.FC = () => {
   return (
     <>
-      <FeatureSharkComposition />
-      <FeatureSharkAdminHomeSceneComposition />
+      <FeatureSharkFullDemoComposition />
       <FeatureSharkFeedbackWidgetSceneComposition />
       <FeatureSharkFeedbackBoardSceneComposition />
       <FeatureSharkPublicBoardScenePart2Composition />
@@ -26,6 +26,8 @@ export const RemotionRoot: React.FC = () => {
       <FeatureSharkChangelogSceneComposition />
       <FeatureSharkHelpCenterSceneComposition />
       <FeatureSharkWidgetSupportSceneComposition />
+      <FeatureSharkComposition />
+      <FeatureSharkAdminHomeSceneComposition />
     </>
   );
 };

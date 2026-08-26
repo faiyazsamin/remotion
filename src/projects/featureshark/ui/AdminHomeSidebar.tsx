@@ -2,15 +2,13 @@ import { AdminRail } from "./AdminRail";
 import {
   IconBook,
   IconCalendar,
-  IconChart,
-  IconChat,
   IconChip,
   IconClipboard,
-  IconHome,
+  IconFeedbackRail,
+  IconHomeRail,
   IconMap,
   IconSettings,
   IconSurveys,
-  IconSwitchWorkspace,
   IconUploadInbox,
   IconUserPlus,
   IconUsers,
@@ -18,23 +16,22 @@ import {
 import type { PartProps } from "./tokens";
 
 /**
- * The rail as Admin Home lists it. Home comes first and is the active item on
- * this page; `IconSwitchWorkspace` sits on its own at the bottom.
+ * The rail as the product lists it: Home, Support, Feedback, Roadmap,
+ * Changelog, Help Center, Surveys, Users, Team, Integrations, Settings, Agents.
  */
 const SIDEBAR_ICONS = [
-  <IconHome key="home" />,
-  <IconUploadInbox key="upload" />,
-  <IconChat key="chat" />,
-  <IconMap key="map" />,
-  <IconCalendar key="calendar" />,
-  <IconBook key="book" />,
-  <IconClipboard key="clipboard" />,
+  <IconHomeRail key="home" />,
+  <IconUploadInbox key="support" />,
+  <IconFeedbackRail key="feedback" />,
+  <IconMap key="roadmap" />,
+  <IconCalendar key="changelog" />,
+  <IconBook key="help" />,
+  <IconClipboard key="surveys" />,
   <IconUsers key="users" />,
-  <IconUserPlus key="user-plus" />,
-  <IconSurveys key="surveys" />,
-  <IconChart key="chart" />,
+  <IconUserPlus key="team" />,
+  <IconSurveys key="integrations" />,
   <IconSettings key="settings" />,
-  <IconChip key="chip" />,
+  <IconChip key="agents" />,
 ];
 
 export type AdminHomeSidebarProps = PartProps & {
@@ -45,7 +42,7 @@ export type AdminHomeSidebarProps = PartProps & {
 
 /**
  * Admin Home's rail. `iconStyle(index)` lets a scene stagger the icons as they
- * arrive; the logo and the footer icon are driven by `logoStyle`/`footerStyle`.
+ * arrive; `footerStyle` is kept for older scene props.
  */
 export const AdminHomeSidebar: React.FC<AdminHomeSidebarProps> = ({
   style,
@@ -56,7 +53,6 @@ export const AdminHomeSidebar: React.FC<AdminHomeSidebarProps> = ({
   <AdminRail
     icons={SIDEBAR_ICONS}
     activeIndex={0}
-    footer={<IconSwitchWorkspace />}
     // No background: the rail sits straight on the page's purple ground, the
     // way the Feedback board's does.
     style={style}

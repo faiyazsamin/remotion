@@ -17,6 +17,7 @@ import {
   BULK_MENU_PADDING,
   BULK_MENU_WIDTH,
   BulkMenu,
+  CHANGELOG_RAIL_ACTIVE,
   countsFor,
   Cursor,
   DARK_MODE_ROW,
@@ -27,6 +28,7 @@ import {
   IconChip,
   INTEGRATIONS_ROW,
   INTEGRATIONS_TITLE,
+  railSlotCentre,
   sharkCentre,
   SharkAiPanel,
   SHARK_PANEL_WIDTH,
@@ -73,6 +75,12 @@ const pulse = (frame: number, at: number) =>
     extrapolateRight: "clamp",
     easing: EASE_OUT,
   });
+
+const routeContentIn = (progress: number): React.CSSProperties => ({
+  opacity: progress,
+  translate: `${(1 - progress) * 54}px 0px`,
+  filter: `blur(${(1 - progress) * 2.4}px)`,
+});
 
 const spotlightOpacity = (frame: number, start: number, end: number) =>
   interpolate(frame, [start, start + 12, end - 12, end], [0, 1, 1, 0], {
@@ -138,6 +146,11 @@ const TASK_STEP = FPS / 2;
 /** The agent announces itself once its log is on screen. */
 const CHANGELOG_TOAST = SWAP + 80;
 const SPIN_LENGTH = FPS / 2;
+
+/** Handoff: leave the AI panel open, then go straight to Changelog in the rail. */
+const CHANGELOG_REACH_START = 700;
+const CHANGELOG_REACH_END = 778;
+const CHANGELOG_CLICK = 790;
 
 /** Both requests start mid-flight; the admin marks them both done. */
 const STATUS_BEFORE = "In Progress";
@@ -252,6 +265,7 @@ const CHECKBOX = headerCheckboxCentre({ filterOpen: true });
 const STATUS_BUTTON = bulkItemCentre("Status");
 const PICK = bulkMenuItemCentre(PICK_INDEX, STATUS_MENU.length);
 const SHARK_BUTTON = sharkCentre();
+const CHANGELOG_RAIL = railSlotCentre(CHANGELOG_RAIL_ACTIVE);
 /** The filter column is still open when Shark AI is pressed. */
 const SHARK = (() => {
   return { x: SHARK_BUTTON.x + 46, y: SHARK_BUTTON.y };
@@ -303,6 +317,8 @@ const CURSOR_TIMES = [
   SHARK_REACH_END,
   SWAP + 10,
   SWAP + 50,
+  CHANGELOG_REACH_START,
+  CHANGELOG_REACH_END,
 ];
 const CURSOR_X = [
   CURSOR_FROM.x,
@@ -317,6 +333,8 @@ const CURSOR_X = [
   SHARK.x,
   SHARK.x,
   SHARK_REST.x,
+  SHARK_REST.x,
+  CHANGELOG_RAIL.x,
 ];
 const CURSOR_Y = [
   CURSOR_FROM.y,
@@ -331,6 +349,8 @@ const CURSOR_Y = [
   SHARK.y,
   SHARK.y,
   SHARK_REST.y,
+  SHARK_REST.y,
+  CHANGELOG_RAIL.y,
 ];
 const CURSOR_EASINGS = CURSOR_TIMES.slice(1).map(() => EASE_OUT);
 
@@ -355,12 +375,13 @@ export const BulkStatusScene: React.FC = () => {
   const barLeaving = arrive(frame, APPLIED, APPLIED + 20);
   const menu = arrive(frame, MENU, MENU + MENU_LENGTH);
   const menuLeaving = arrive(frame, PICK_CLICK, PICK_CLICK + 12);
+  const boardIn = arrive(frame, 0, 36);
   const swap = arrive(frame, SWAP, SWAP + SWAP_LENGTH);
   const spinnerAngle = frame * (360 / FPS);
   const barFocus = spotlightOpacity(frame, BAR, STATUS_REACH_START + 26);
   const menuFocus = spotlightOpacity(frame, MENU, PICK_CLICK + 16);
   const sharkButtonFocus = spotlightOpacity(frame, SHARK_REACH_START + 4, SHARK_CLICK + 12);
-  const sharkPanelFocus = arrive(frame, SWAP + SWAP_LENGTH, SWAP + SWAP_LENGTH + 18);
+  const sharkPanelFocus = spotlightOpacity(frame, SWAP + SWAP_LENGTH, CHANGELOG_REACH_START - 18);
 
   const rows: FeedbackRow[] = ROWS.map((row, index) => {
     const selectedPulse = pulse(frame, SELECT_CLICK + index * 5);
@@ -484,6 +505,8 @@ export const BulkStatusScene: React.FC = () => {
       style={{ backgroundColor: "#3f2cc0" }}
     >
       <FeedbackBoard
+        panelStyle={routeContentIn(boardIn)}
+        contentStyle={routeContentIn(boardIn)}
         rows={rows}
         counts={countsFor(rows)}
         allChecked={selected}
@@ -618,7 +641,8 @@ export const BulkStatusScene: React.FC = () => {
             press(frame, SELECT_CLICK, 0.88) *
             press(frame, STATUS_CLICK, 0.88) *
             press(frame, PICK_CLICK, 0.88) *
-            press(frame, SHARK_CLICK, 0.88),
+            press(frame, SHARK_CLICK, 0.88) *
+            press(frame, CHANGELOG_CLICK, 0.88),
         }}
       />
     </AbsoluteFill>

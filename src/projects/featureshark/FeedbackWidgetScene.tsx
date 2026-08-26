@@ -21,6 +21,8 @@ import {
   SITE_HEIGHT,
   SITE_WIDTH,
   toggleCentre,
+  WIDGET_HEIGHT,
+  WIDGET_TOP,
 } from "./ui";
 
 export const FeatureSharkFeedbackWidgetSceneComposition = () => (
@@ -100,6 +102,7 @@ const SUCCESS_PARTICLES = [
 const TOGGLE = toggleCentre(SITE_WIDTH, SITE_HEIGHT);
 const FAB = fabCentre(SITE_WIDTH);
 const FORM = formTargets(SITE_WIDTH);
+const WIDGET_CENTER_Y = WIDGET_TOP + WIDGET_HEIGHT / 2;
 /** Off-frame, down and right of the toggle, so the approach reads as one line. */
 const CURSOR_FROM = { x: SITE_WIDTH + 130, y: SITE_HEIGHT + 120 };
 /**
@@ -188,11 +191,10 @@ export const FeedbackWidgetScene: React.FC = () => {
     [
       TYPE_START - 34,
       TYPE_START + 20,
-      BOARD_REACH_START - 10,
       SUBMIT_REACH_END,
       SENT + 42,
     ],
-    [1, 1.2, 1.2, 1.16, 1.1],
+    [1, 1.2, 1.16, 1.1],
     {
       extrapolateLeft: "clamp",
       extrapolateRight: "clamp",
@@ -201,8 +203,8 @@ export const FeedbackWidgetScene: React.FC = () => {
   );
   const cameraTargetX = interpolate(
     frame,
-    [TYPE_START - 34, TYPE_START + 20, BOARD_REACH_START - 10, SUBMIT_REACH_END],
-    [FORM.title.x, FORM.title.x, FORM.board.x, FORM.submit.x],
+    [TYPE_START - 34, BOARD_REACH_END, SUBMIT_REACH_END],
+    [FORM.title.x, FORM.board.x, FORM.submit.x],
     {
       extrapolateLeft: "clamp",
       extrapolateRight: "clamp",
@@ -211,8 +213,8 @@ export const FeedbackWidgetScene: React.FC = () => {
   );
   const cameraTargetY = interpolate(
     frame,
-    [TYPE_START - 34, TYPE_START + 20, BOARD_REACH_START - 10, SUBMIT_REACH_END],
-    [FORM.title.y, FORM.title.y, FORM.board.y + 24, FORM.submit.y - 22],
+    [TYPE_START - 34, BOARD_REACH_END, SUBMIT_REACH_END],
+    [FORM.title.y, FORM.board.y + 24, WIDGET_CENTER_Y],
     {
       extrapolateLeft: "clamp",
       extrapolateRight: "clamp",
